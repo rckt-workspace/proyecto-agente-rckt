@@ -1,6 +1,0 @@
-node_modules
-dist
-bot-session
-data/authorized.json
-.env
-npm-debug.log*

@@ -1,0 +1,48 @@
+version: '3.9'
+
+services:
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: eb_backend
+    ports:
+      - "8000:8000"
+    env_file: .env
+    environment:
+      - WA_BRIDGE_URL=http://wa_bridge:3001
+    volumes:
+      - ./backend/app:/app/app
+    restart: unless-stopped
+    depends_on:
+      - wa_bridge
+
+  wa_bridge:
+    build:
+      context: ./backend/wa_bridge
+      dockerfile: Dockerfile
+    container_name: eb_wa_bridge
+    ports:
+      - "3001:3001"
+    env_file: .env
+    environment:
+      - BACKEND_URL=http://backend:8000
+      - WA_BRIDGE_PORT=3001
+      - WA_SESSION_DIR=/app/session
+    volumes:
+      - wa_session:/app/session
+    restart: unless-stopped
+
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    container_name: eb_frontend
+    ports:
+      - "3000:80"
+    restart: unless-stopped
+    depends_on:
+      - backend
+
+volumes:
+  wa_session:

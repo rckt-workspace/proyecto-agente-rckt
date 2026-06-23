@@ -1,0 +1,36 @@
+{
+  "family": "elitebeauty-backend",
+  "networkMode": "awsvpc",
+  "requiresCompatibilities": ["FARGATE"],
+  "cpu": "512",
+  "memory": "1024",
+  "executionRoleArn": "arn:aws:iam::ACCOUNT_ID:role/ecsTaskExecutionRole",
+  "containerDefinitions": [
+    {
+      "name": "backend",
+      "image": "ACCOUNT_ID.dkr.ecr.REGION.amazonaws.com/elitebeauty-backend:latest",
+      "portMappings": [{ "containerPort": 8000, "protocol": "tcp" }],
+      "essential": true,
+      "logConfiguration": {
+        "logDriver": "awslogs",
+        "options": {
+          "awslogs-group": "/ecs/elitebeauty-backend",
+          "awslogs-region": "REGION",
+          "awslogs-stream-prefix": "ecs"
+        }
+      },
+      "secrets": [
+        { "name": "OPENROUTER_API_KEY", "valueFrom": "arn:aws:secretsmanager:REGION:ACCOUNT_ID:secret:elitebeauty/openrouter-key" },
+        { "name": "OPENAI_API_KEY",     "valueFrom": "arn:aws:secretsmanager:REGION:ACCOUNT_ID:secret:elitebeauty/openai-key" },
+        { "name": "SUPABASE_URL",       "valueFrom": "arn:aws:secretsmanager:REGION:ACCOUNT_ID:secret:elitebeauty/supabase-url" },
+        { "name": "SUPABASE_SERVICE_KEY","valueFrom": "arn:aws:secretsmanager:REGION:ACCOUNT_ID:secret:elitebeauty/supabase-key" },
+        { "name": "TWILIO_ACCOUNT_SID", "valueFrom": "arn:aws:secretsmanager:REGION:ACCOUNT_ID:secret:elitebeauty/twilio-sid" },
+        { "name": "TWILIO_AUTH_TOKEN",  "valueFrom": "arn:aws:secretsmanager:REGION:ACCOUNT_ID:secret:elitebeauty/twilio-token" }
+      ],
+      "environment": [
+        { "name": "WA_BRIDGE_URL", "value": "http://wa_bridge:3001" },
+        { "name": "PUBLIC_BASE_URL", "value": "https://agent.elitebeauty.com.co" }
+      ]
+    }
+  ]
+}
