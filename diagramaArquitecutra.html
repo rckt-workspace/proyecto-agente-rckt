@@ -1,0 +1,163 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1"/>
+<title>Elite Beauty Agent — Arquitectura v2</title>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;background:#0f0f10;color:#e8e6df;min-height:100vh;padding:32px 16px}
+h1{font-size:18px;font-weight:500;color:#f0ece3;margin-bottom:4px}
+p.sub{font-size:12px;color:#888780;margin-bottom:28px}
+.layer-label{font-size:10px;font-weight:600;letter-spacing:.08em;text-transform:uppercase;color:#5f5e5a;margin-bottom:8px;padding-left:2px}
+.layer{border:1px solid #2a2a28;border-radius:12px;padding:14px 16px;margin-bottom:12px;background:#161617}
+.row{display:flex;gap:8px;flex-wrap:wrap}
+.box{border-radius:8px;padding:10px 14px;flex:1;min-width:120px;cursor:default;border:1px solid transparent}
+.box .title{font-size:13px;font-weight:500;line-height:1.3}
+.box .sub{font-size:11px;margin-top:3px;line-height:1.4}
+
+.gray  {background:#222220;border-color:#3a3a37}.gray  .title{color:#c2c0b6}.gray  .sub{color:#5f5e5a}
+.purple{background:#1e1c38;border-color:#3c3489}.purple.title{color:#afa9ec}.purple .sub{color:#534ab7}
+.teal  {background:#0c2620;border-color:#0f6e56}.teal  .title{color:#5dcaa5}.teal  .sub{color:#1d9e75}
+.amber {background:#261a08;border-color:#854f0b}.amber .title{color:#fac775}.amber .sub{color:#ba7517}
+.blue  {background:#0a1e34;border-color:#185fa5}.blue  .title{color:#85b7eb}.blue  .sub{color:#378add}
+.coral {background:#221009;border-color:#993c1d}.coral .title{color:#f0997b}.coral .sub{color:#d85a30}
+.green {background:#0e1f0a;border-color:#3b6d11}.green .title{color:#97c459}.green .sub{color:#639922}
+.pink  {background:#1f0d14;border-color:#72243e}.pink  .title{color:#ed93b1}.pink  .sub{color:#d4537e}
+
+/* RAG mixto highlight */
+.rag-wrapper{border:1px solid #1d9e75;border-radius:12px;padding:12px;margin-bottom:12px;background:#080f0d;position:relative}
+.rag-badge{position:absolute;top:-10px;left:16px;background:#0f6e56;color:#5dcaa5;font-size:10px;font-weight:600;letter-spacing:.07em;padding:2px 10px;border-radius:20px;text-transform:uppercase}
+.rag-sources{display:flex;gap:8px;margin-bottom:8px}
+.rag-merge{background:#0c2620;border:1px dashed #1d9e75;border-radius:8px;padding:10px 14px;text-align:center}
+.rag-merge .title{font-size:13px;font-weight:500;color:#5dcaa5}
+.rag-merge .sub{font-size:11px;color:#1d9e75;margin-top:3px}
+.arrow-row{display:flex;justify-content:center;align-items:center;margin:4px 0;color:#3a3a37;font-size:18px}
+.arrow-split{display:flex;justify-content:center;gap:80px;margin:4px 0;color:#3a3a37;font-size:14px}
+.arrow-merge{display:flex;justify-content:center;margin:4px 0;color:#1d9e75;font-size:14px}
+
+.legend{display:flex;gap:16px;flex-wrap:wrap;margin-top:20px;padding-top:16px;border-top:1px solid #222220}
+.legend-item{display:flex;align-items:center;gap:6px;font-size:11px;color:#5f5e5a}
+.legend-dot{width:10px;height:10px;border-radius:3px}
+</style>
+</head>
+<body>
+<h1>Elite Beauty Agent <span style="color:#5f5e5a;font-weight:400">v2</span></h1>
+<p class="sub">Arquitectura con RAG mixto — Supabase + Tavily siempre activos</p>
+
+<!-- CANALES -->
+<div class="layer-label">Canales de entrada</div>
+<div class="layer">
+  <div class="row">
+    <div class="box gray"><div class="title">WhatsApp Web</div><div class="sub">QR / SIM card</div></div>
+    <div class="box gray"><div class="title">Twilio WA Sandbox</div><div class="sub">Pruebas sin SIM</div></div>
+    <div class="box gray"><div class="title">Twilio Voice</div><div class="sub">Llamadas telefónicas</div></div>
+    <div class="box gray"><div class="title">Dashboard web</div><div class="sub">Chat de prueba</div></div>
+  </div>
+</div>
+
+<div class="arrow-row">↓</div>
+
+<!-- GATEWAY -->
+<div class="layer-label">Gateway</div>
+<div class="layer">
+  <div class="row">
+    <div class="box" style="flex:2;background:#1e1c38;border-color:#3c3489"><div class="title" style="color:#afa9ec">FastAPI gateway</div><div class="sub" style="color:#534ab7">Webhooks · REST API · WebSocket live</div></div>
+    <div class="box" style="background:#1e1c38;border-color:#3c3489"><div class="title" style="color:#afa9ec">WA Bridge</div><div class="sub" style="color:#534ab7">whatsapp-web.js · QR session</div></div>
+  </div>
+</div>
+
+<div class="arrow-row">↓</div>
+
+<!-- BACKEND -->
+<div class="layer-label">Backend Python — módulos del agente</div>
+<div class="layer">
+  <div class="row" style="margin-bottom:8px">
+    <div class="box teal"><div class="title">Agente IA</div><div class="sub">Orquestador central</div></div>
+    <div class="box teal"><div class="title">WA Handler</div><div class="sub">Historial · sesión · cooldown</div></div>
+    <div class="box teal"><div class="title">Voice Handler</div><div class="sub">TwiML · transcripción · TTS</div></div>
+  </div>
+  <div class="row">
+    <div class="box teal"><div class="title">RAG Engine</div><div class="sub">Orquesta RAG mixto</div></div>
+    <div class="box teal"><div class="title">Analytics</div><div class="sub">Métricas · reportes</div></div>
+    <div class="box teal"><div class="title">Leads CRM</div><div class="sub">Datos recolectados</div></div>
+  </div>
+</div>
+
+<div class="arrow-row">↓</div>
+
+<!-- RAG MIXTO -->
+<div class="layer-label">RAG mixto — siempre consulta ambas fuentes en paralelo</div>
+<div class="rag-wrapper">
+  <div class="rag-badge">⚡ RAG mixto</div>
+  <div class="rag-sources">
+    <div class="box amber" style="flex:1">
+      <div class="title">Supabase pgvector</div>
+      <div class="sub">Conocimiento interno de Elite Beauty · procedimientos · precios · FAQs · horarios</div>
+    </div>
+    <div style="display:flex;align-items:center;color:#3a3a37;font-size:20px;padding:0 4px">+</div>
+    <div class="box green" style="flex:1">
+      <div class="title">Tavily Search API</div>
+      <div class="sub">Internet en tiempo real · términos técnicos · comparativas · tendencias del sector</div>
+    </div>
+  </div>
+  <div class="arrow-merge">↓ &nbsp; combina y prioriza contexto &nbsp; ↓</div>
+  <div class="rag-merge" style="margin-top:8px">
+    <div class="title">Context merger</div>
+    <div class="sub">Interno tiene prioridad · web complementa · el modelo recibe los dos juntos</div>
+  </div>
+</div>
+
+<div class="arrow-row">↓</div>
+
+<!-- LLM -->
+<div class="layer-label">Modelo de lenguaje</div>
+<div class="layer">
+  <div class="row">
+    <div class="box amber" style="flex:2"><div class="title">OpenRouter LLM</div><div class="sub">Llama 3.1 · Gemma · GPT-4o-mini · Claude Haiku — intercambiable desde dashboard</div></div>
+    <div class="box" style="background:#221009;border-color:#993c1d;flex:1"><div class="title" style="color:#f0997b">Supabase Postgres</div><div class="sub" style="color:#d85a30">Conversaciones · leads · métricas · config</div></div>
+  </div>
+</div>
+
+<div class="arrow-row">↓</div>
+
+<!-- AWS -->
+<div class="layer-label">Infraestructura AWS</div>
+<div class="layer">
+  <div class="row">
+    <div class="box coral"><div class="title">ECS Fargate</div><div class="sub">Contenedores</div></div>
+    <div class="box coral"><div class="title">ECR</div><div class="sub">Registro Docker</div></div>
+    <div class="box coral"><div class="title">ALB + ACM</div><div class="sub">HTTPS · balanceo</div></div>
+    <div class="box coral"><div class="title">Route 53</div><div class="sub">DNS</div></div>
+  </div>
+</div>
+
+<div class="arrow-row">↓</div>
+
+<!-- FRONTEND -->
+<div class="layer-label">Frontend React — dashboard de gestión</div>
+<div class="layer">
+  <div class="row" style="margin-bottom:8px">
+    <div class="box blue"><div class="title">Dashboard</div><div class="sub">KPIs live · alertas</div></div>
+    <div class="box blue"><div class="title">Conversaciones</div><div class="sub">WA + voz en tiempo real</div></div>
+    <div class="box blue"><div class="title">Leads CRM</div><div class="sub">Datos · seguimiento</div></div>
+  </div>
+  <div class="row">
+    <div class="box blue"><div class="title">Analytics</div><div class="sub">Reportes · tendencias</div></div>
+    <div class="box blue"><div class="title">RAG Docs</div><div class="sub">Base de conocimiento interna</div></div>
+    <div class="box blue"><div class="title">Settings</div><div class="sub">Prompts · modelo · Tavily config</div></div>
+  </div>
+</div>
+
+<!-- LEYENDA -->
+<div class="legend">
+  <div class="legend-item"><div class="legend-dot" style="background:#222220;border:1px solid #3a3a37"></div>Canales</div>
+  <div class="legend-item"><div class="legend-dot" style="background:#1e1c38"></div>Gateway</div>
+  <div class="legend-item"><div class="legend-dot" style="background:#0c2620"></div>Backend Python</div>
+  <div class="legend-item"><div class="legend-dot" style="background:#080f0d;border:1px solid #1d9e75"></div>RAG mixto</div>
+  <div class="legend-item"><div class="legend-dot" style="background:#261a08"></div>LLM + datos</div>
+  <div class="legend-item"><div class="legend-dot" style="background:#221009"></div>AWS</div>
+  <div class="legend-item"><div class="legend-dot" style="background:#0a1e34"></div>Frontend</div>
+</div>
+</body>
+</html>
