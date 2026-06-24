@@ -22,6 +22,9 @@ export default function Settings() {
       const map: Record<string, string> = {};
       data.forEach(c => { map[c.key] = c.value || ''; });
       setValues(map);
+    }).catch(() => {
+      setConfigState([]);
+      setValues({});
     });
 
   useEffect(() => { load(); }, []);
@@ -29,6 +32,7 @@ export default function Settings() {
   const save = async (key: string) => {
     setSaving(key);
     try { await setConfig(key, values[key] || ''); }
+    catch {}
     finally { setSaving(null); }
   };
 

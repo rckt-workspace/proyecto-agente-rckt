@@ -15,7 +15,7 @@ export default function RAGDocs() {
   const [embedLoading, setEmbedLoading] = useState<string | null>(null);
   const [showForm, setShowForm] = useState(false);
 
-  const load = () => getDocs().then(setDocs);
+  const load = () => getDocs().then(setDocs).catch(() => setDocs([]));
   useEffect(() => { load(); }, []);
 
   const save = async () => {
@@ -30,6 +30,7 @@ export default function RAGDocs() {
       setEditing(null);
       setShowForm(false);
       load();
+    } catch {
     } finally { setLoading(false); }
   };
 
@@ -42,13 +43,16 @@ export default function RAGDocs() {
 
   const remove = async (id: string) => {
     if (!confirm('¿Eliminar este documento?')) return;
-    await deleteDoc(id);
-    load();
+    try {
+      await deleteDoc(id);
+      load();
+    } catch {}
   };
 
   const reEmbed = async (id: string) => {
     setEmbedLoading(id);
     try { await embedDoc(id); load(); }
+    catch {}
     finally { setEmbedLoading(null); }
   };
 

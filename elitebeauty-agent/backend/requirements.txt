@@ -11,3 +11,4 @@ openai==1.57.2
 tiktoken==0.8.0
 numpy==1.26.4
 aiofiles==24.1.0
+tavily-python==0.5.0

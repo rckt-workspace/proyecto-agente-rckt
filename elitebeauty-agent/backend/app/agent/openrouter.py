@@ -19,6 +19,14 @@ async def ask(
     """
     Returns: (reply_text, tokens_used, latency_ms)
     """
+    if not settings.has_openrouter:
+        logger.warning("OPENROUTER_API_KEY no configurada; respuesta IA omitida")
+        return (
+            "El asistente IA todavía no está configurado. Revisa OPENROUTER_API_KEY en el .env.",
+            0,
+            0,
+        )
+
     model = model or settings.openrouter_model
     headers = {
         "Authorization": f"Bearer {settings.openrouter_api_key}",
@@ -72,6 +80,8 @@ async def ask(
 
 
 async def health_check() -> bool:
+    if not settings.has_openrouter:
+        return False
     try:
         async with httpx.AsyncClient(timeout=5.0) as client:
             resp = await client.get(

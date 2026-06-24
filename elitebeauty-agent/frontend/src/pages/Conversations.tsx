@@ -17,18 +17,23 @@ export default function Conversations() {
 
   const load = () => {
     setLoading(true);
-    getConversations(filter).then(setConvs).finally(() => setLoading(false));
+    getConversations(filter)
+      .then(setConvs)
+      .catch(() => setConvs([]))
+      .finally(() => setLoading(false));
   };
 
   useEffect(() => { load(); }, [filter]);
 
   const openDetail = (id: string) =>
-    getConversation(id).then(setSelected);
+    getConversation(id).then(setSelected).catch(() => setSelected(null));
 
   const changeStatus = async (id: string, status: string) => {
-    await patchConversation(id, { status });
-    load();
-    if (selected?.id === id) setSelected(prev => prev ? { ...prev, status } : prev);
+    try {
+      await patchConversation(id, { status });
+      load();
+      if (selected?.id === id) setSelected(prev => prev ? { ...prev, status } : prev);
+    } catch {}
   };
 
   return (

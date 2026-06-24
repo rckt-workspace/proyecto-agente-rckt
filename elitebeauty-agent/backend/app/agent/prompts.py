@@ -88,12 +88,21 @@ Contacto: +57 301 444 6646. Valoración inicial GRATIS.
 def build_whatsapp_prompt(rag_context: str = "") -> str:
     base = SYSTEM_PROMPT_WHATSAPP
     if rag_context:
-        base += f"\n\n=== CONTEXTO ADICIONAL ===\n{rag_context}"
+        base += (
+            "\n\n=== FUENTES DE CONOCIMIENTO ==="
+            "\nUsa la información siguiente para responder con precisión. "
+            "Prioriza siempre el CONOCIMIENTO ELITE BEAUTY; usa la REFERENCIA WEB "
+            "solo para complementar términos o conceptos generales no documentados internamente.\n\n"
+            + rag_context
+        )
     return base
 
 
 def build_voice_prompt(rag_context: str = "") -> str:
     base = SYSTEM_PROMPT_VOICE
     if rag_context:
-        base += f"\n\nCONTEXTO ADICIONAL: {rag_context}"
+        base += (
+            "\n\nFUENTES DE CONOCIMIENTO (prioriza Elite Beauty sobre web):\n"
+            + rag_context
+        )
     return base

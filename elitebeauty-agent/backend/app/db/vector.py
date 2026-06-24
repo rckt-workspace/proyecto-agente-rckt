@@ -8,8 +8,14 @@ logger = logging.getLogger(__name__)
 _openai: OpenAI | None = None
 
 
+def embeddings_configured() -> bool:
+    return settings.has_openai_embeddings
+
+
 def _get_openai() -> OpenAI:
     global _openai
+    if not embeddings_configured():
+        raise RuntimeError("OPENAI_API_KEY no configurada para embeddings")
     if _openai is None:
         _openai = OpenAI(api_key=settings.openai_api_key)
     return _openai

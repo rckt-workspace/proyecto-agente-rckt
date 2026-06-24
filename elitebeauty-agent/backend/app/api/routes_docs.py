@@ -3,15 +3,14 @@ import logging
 from fastapi import APIRouter, HTTPException, BackgroundTasks
 from app.db.models import DocumentCreate, DocumentUpdate
 from app.db import supabase_client as db
-from app.db.vector import embed_document
-from app.config import settings
+from app.db.vector import embed_document, embeddings_configured
 
 logger = logging.getLogger(__name__)
 router = APIRouter(prefix="/api/docs", tags=["docs"])
 
 
 async def _embed_bg(doc_id: str, content: str):
-    if not settings.openai_api_key:
+    if not embeddings_configured():
         logger.warning("OPENAI_API_KEY no configurada, embedding omitido")
         return
     try:
@@ -29,7 +28,7 @@ async def list_docs():
 @router.post("")
 async def create_doc(body: DocumentCreate, background_tasks: BackgroundTasks):
     doc = await db.create_document(body.model_dump(exclude_none=True))
-    if settings.openai_api_key:
+    if embeddings_configured():
         background_tasks.add_task(_embed_bg, str(doc["id"]), doc["content"])
     return doc
 
@@ -49,7 +48,7 @@ async def update_doc(doc_id: str, body: DocumentUpdate, background_tasks: Backgr
     updated = await db.update_document(doc_id, data)
     if not updated:
         raise HTTPException(404, "Documento no encontrado")
-    if settings.openai_api_key and "content" in data:
+    if embeddings_configured() and "content" in data:
         background_tasks.add_task(_embed_bg, doc_id, updated["content"])
     return updated
 
@@ -68,7 +67,7 @@ async def force_embed(doc_id: str, background_tasks: BackgroundTasks):
     doc = await db.get_document(doc_id)
     if not doc:
         raise HTTPException(404, "Documento no encontrado")
-    if not settings.openai_api_key:
+    if not embeddings_configured():
         raise HTTPException(400, "OPENAI_API_KEY no configurada")
     background_tasks.add_task(_embed_bg, doc_id, doc["content"])
     return {"ok": True, "message": "Embedding iniciado en background"}

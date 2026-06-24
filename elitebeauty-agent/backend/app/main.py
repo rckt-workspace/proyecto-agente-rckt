@@ -1,12 +1,16 @@
 import logging
 from contextlib import asynccontextmanager
-from fastapi import FastAPI
+import httpx
+from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.responses import JSONResponse
+from postgrest.exceptions import APIError as PostgrestAPIError
 
 from app.config import settings
 from app.api import ws
 from app.api import routes_chat, routes_leads, routes_analytics, routes_docs, routes_config, routes_conversations, routes_wa
 from app.channels import whatsapp, voice
+from app.db.supabase_client import DatabaseNotConfigured, is_configured as supabase_is_configured
 
 logging.basicConfig(
     level=logging.INFO,
@@ -50,6 +54,32 @@ app.include_router(whatsapp.router)
 app.include_router(voice.router)
 
 
+@app.exception_handler(DatabaseNotConfigured)
+async def database_not_configured_handler(_request: Request, exc: DatabaseNotConfigured):
+    return JSONResponse(status_code=503, content={"detail": str(exc)})
+
+
+@app.exception_handler(PostgrestAPIError)
+async def postgrest_error_handler(_request: Request, _exc: PostgrestAPIError):
+    return JSONResponse(
+        status_code=502,
+        content={
+            "detail": (
+                "Supabase rechazó la operación. Revisa credenciales, permisos "
+                "y que la migración supabase/migrations/001_initial.sql esté aplicada."
+            )
+        },
+    )
+
+
+@app.exception_handler(httpx.HTTPError)
+async def http_error_handler(_request: Request, _exc: httpx.HTTPError):
+    return JSONResponse(
+        status_code=503,
+        content={"detail": "Servicio externo no disponible. Intenta de nuevo en unos segundos."},
+    )
+
+
 @app.get("/")
 async def root():
     return {
@@ -64,8 +94,14 @@ async def root():
 async def health():
     from app.agent.openrouter import health_check
     or_ok = await health_check()
+    supabase_ok = supabase_is_configured()
+    status = "ok" if or_ok and supabase_ok else "degraded"
     return {
-        "status": "ok",
+        "status": status,
         "openrouter": "online" if or_ok else "offline",
+        "supabase": "configured" if supabase_ok else "not_configured",
+        "twilio": "configured" if settings.has_twilio else "not_configured",
+        "openai_embeddings": "configured" if settings.has_openai_embeddings else "not_configured",
+        "tavily": "configured" if settings.has_tavily else "not_configured",
         "model": settings.openrouter_model,
     }

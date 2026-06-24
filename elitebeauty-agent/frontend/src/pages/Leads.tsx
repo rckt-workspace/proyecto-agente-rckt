@@ -19,15 +19,20 @@ export default function Leads() {
 
   const load = () => {
     setLoading(true);
-    getLeads(filter).then(setLeads).finally(() => setLoading(false));
+    getLeads(filter)
+      .then(setLeads)
+      .catch(() => setLeads([]))
+      .finally(() => setLoading(false));
   };
 
   useEffect(() => { load(); }, [filter]);
 
   const changeStatus = async (id: string, status: string) => {
-    await patchLead(id, { status });
-    load();
-    setSelected(prev => prev?.id === id ? { ...prev, status } : prev);
+    try {
+      await patchLead(id, { status });
+      load();
+      setSelected(prev => prev?.id === id ? { ...prev, status } : prev);
+    } catch {}
   };
 
   return (

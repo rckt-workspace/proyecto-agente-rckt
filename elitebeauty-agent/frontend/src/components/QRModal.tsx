@@ -5,14 +5,16 @@ type Props = { onClose: () => void };
 
 export default function QRModal({ onClose }: Props) {
   const [qrImage, setQrImage] = useState('');
+  const [status, setStatus] = useState('disconnected');
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     const load = () =>
       getWAQR().then((d) => {
         setQrImage(d.image || '');
+        setStatus(d.status || d.bot || 'disconnected');
         setLoading(false);
-      });
+      }).catch(() => setLoading(false));
     load();
     const id = setInterval(load, 10000);
     return () => clearInterval(id);
@@ -29,9 +31,13 @@ export default function QRModal({ onClose }: Props) {
           <div className="h-48 flex items-center justify-center text-gray-400">Cargando QR...</div>
         ) : qrImage ? (
           <img src={qrImage} alt="QR WhatsApp" className="w-full rounded-xl border-4 border-rose-100" />
-        ) : (
+        ) : status === 'ready' ? (
           <div className="h-48 flex items-center justify-center text-green-600 font-bold text-lg">
-            ✅ WhatsApp conectado
+            WhatsApp conectado
+          </div>
+        ) : (
+          <div className="h-48 flex items-center justify-center text-gray-400 text-sm">
+            Esperando QR del bridge
           </div>
         )}
         <button onClick={onClose} className="mt-5 btn-secondary w-full">

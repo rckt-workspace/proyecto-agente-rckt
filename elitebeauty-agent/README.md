@@ -40,16 +40,16 @@ docker-compose up --build
 ```
 
 Servicios disponibles:
-- Dashboard: http://localhost:3000
-- Backend API: http://localhost:8000
-- API Docs: http://localhost:8000/docs
-- WA Bridge Panel: http://localhost:3001/panel
+- Dashboard: http://localhost:3010
+- Backend API: http://localhost:8010
+- API Docs: http://localhost:8010/docs
+- WA Bridge Panel: http://localhost:3011/panel
 
 ### 4. Conectar WhatsApp
 
-Abre http://localhost:3001/panel y escanea el QR con tu teléfono.
+Abre http://localhost:3011/panel y escanea el QR con tu teléfono.
 
-O desde el dashboard en http://localhost:3000 → botón "Conectar WhatsApp".
+O desde el dashboard en http://localhost:3010 → botón "Conectar WhatsApp".
 
 ---
 
@@ -111,6 +111,11 @@ npm run dev   # http://localhost:3000
 ---
 
 ## Deploy en AWS
+
+La carpeta `infra/` contiene archivos alternativos para despliegue:
+- `infra/docker-compose.yml`: mismos servicios en puertos estándar 8000/3000/3001.
+- `infra/docker-compose.prod.yml`: consume imágenes ya publicadas en un registry/ECR.
+- `infra/aws/`: definición ECS y script para construir, publicar y redeplegar servicios.
 
 ```bash
 cd infra/aws

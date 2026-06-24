@@ -1,10 +1,38 @@
-from pydantic_settings import BaseSettings, SettingsConfigDict
 from functools import lru_cache
+from pathlib import Path
+
+from pydantic_settings import BaseSettings, SettingsConfigDict
+
+
+_APP_DIR = Path(__file__).resolve().parent
+_BACKEND_DIR = _APP_DIR.parent
+_PROJECT_DIR = _BACKEND_DIR.parent
+_ENV_FILES = (_PROJECT_DIR / ".env", _BACKEND_DIR / ".env")
+
+_PLACEHOLDER_VALUES = {
+    "sk-xxx",
+    "sk-or-v1-xxx",
+    "tvly-xxx",
+    "xxx",
+    "eyJxxx",
+    "ACxxx",
+    "+15551234567",
+    "https://xxxx.supabase.co",
+    "cambiar-en-produccion",
+    "cambiar-en-produccion-generado-con-openssl-rand-hex-32",
+}
+
+
+def _has_real_value(value: str | None) -> bool:
+    if not value:
+        return False
+    return value.strip() not in _PLACEHOLDER_VALUES
 
 
 class Settings(BaseSettings):
     model_config = SettingsConfigDict(
-        env_file=".env",
+        env_file=_ENV_FILES,
+        env_file_encoding="utf-8",
         case_sensitive=False,
         extra="ignore",
     )
@@ -37,10 +65,33 @@ class Settings(BaseSettings):
     frontend_port: int = 3000
     secret_key: str = "cambiar-en-produccion"
 
+    # Tavily (búsqueda web para RAG mixto)
+    tavily_api_key: str = ""
+
     # Defaults (pueden sobreescribirse desde agent_config en DB)
     rag_top_k: int = 5
     max_history: int = 6
     cooldown_ms: int = 2000
+
+    @property
+    def has_openrouter(self) -> bool:
+        return _has_real_value(self.openrouter_api_key)
+
+    @property
+    def has_openai_embeddings(self) -> bool:
+        return _has_real_value(self.openai_api_key)
+
+    @property
+    def has_supabase(self) -> bool:
+        return _has_real_value(self.supabase_url) and _has_real_value(self.supabase_service_key)
+
+    @property
+    def has_tavily(self) -> bool:
+        return _has_real_value(self.tavily_api_key)
+
+    @property
+    def has_twilio(self) -> bool:
+        return _has_real_value(self.twilio_account_sid) and _has_real_value(self.twilio_auth_token)
 
 
 @lru_cache()

@@ -18,14 +18,14 @@ export default function Analytics() {
   const [intents, setIntents] = useState<any[]>([]);
 
   useEffect(() => {
-    getOverview().then(setOverview);
-    getTopIntents().then(setIntents);
+    getOverview().then(setOverview).catch(() => setOverview({}));
+    getTopIntents().then(setIntents).catch(() => setIntents([]));
   }, []);
 
   useEffect(() => {
-    getMessagesByDay(period).then(setMsgs);
-    getLeadsStats(period).then(setLeadsStats);
-    getResponseTime(period).then(setRt);
+    getMessagesByDay(period).then(setMsgs).catch(() => setMsgs([]));
+    getLeadsStats(period).then(setLeadsStats).catch(() => setLeadsStats([]));
+    getResponseTime(period).then(setRt).catch(() => setRt([]));
   }, [period]);
 
   // Pie: WA vs Voice
