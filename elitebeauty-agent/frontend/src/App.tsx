@@ -33,11 +33,24 @@ export default function App() {
 
         <main className="flex-1 flex flex-col">
           {/* Topbar */}
-          <header className="bg-white border-b border-gray-200 px-6 py-3 flex items-center justify-between">
-            <h1 className="text-sm font-semibold text-gray-700">Elite Beauty — Agente IA Omnicanal</h1>
+          <header
+            className="px-6 py-3 flex items-center justify-between"
+            style={{
+              background: 'rgba(13, 10, 20, 0.8)',
+              borderBottom: '1px solid rgba(34, 25, 50, 1)',
+              backdropFilter: 'blur(20px)',
+            }}
+          >
+            <h1 className="font-display text-xs font-semibold text-eb-muted tracking-[0.18em] uppercase">
+              Elite Beauty — Agente IA Omnicanal
+            </h1>
             <div className="flex items-center gap-3">
               <span
-                className={`w-2 h-2 rounded-full ${connected ? 'bg-green-500 animate-pulse' : 'bg-gray-300'}`}
+                className={`w-2 h-2 rounded-full transition-all ${
+                  connected
+                    ? 'bg-green-400 animate-pulse shadow-[0_0_8px_rgba(74,222,128,0.7)]'
+                    : 'bg-eb-dim'
+                }`}
                 title={connected ? 'WebSocket conectado' : 'WebSocket desconectado'}
               />
               {waStatus !== 'ready' && (

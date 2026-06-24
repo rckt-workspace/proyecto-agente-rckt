@@ -6,7 +6,7 @@ import { useWebSocket, type WSEvent } from '../lib/ws';
 
 type Feed = { type: string; from?: string; body?: string; response?: string; user_said?: string; agent_said?: string; ts: string };
 
-export default function Dashboard({ setShowQR }: { setShowQR: (v: boolean) => void }) {
+export default function Dashboard({ setShowQR: _setShowQR }: { setShowQR: (v: boolean) => void }) {
   const [overview, setOverview] = useState<Record<string, number>>({});
   const [msgData, setMsgData] = useState<any[]>([]);
   const [feed, setFeed] = useState<Feed[]>([]);
@@ -50,7 +50,7 @@ export default function Dashboard({ setShowQR }: { setShowQR: (v: boolean) => vo
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
-        <h2 className="text-xl font-bold text-gray-900">Dashboard</h2>
+        <h2 className="text-xl font-display font-bold text-eb-text tracking-wider uppercase">Dashboard</h2>
         <button onClick={load} className="btn-secondary text-xs">🔄 Actualizar</button>
       </div>
 
@@ -65,19 +65,19 @@ export default function Dashboard({ setShowQR }: { setShowQR: (v: boolean) => vo
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         {/* Gráfica mensajes */}
         <div className="card">
-          <h3 className="font-semibold text-gray-800 mb-4">Mensajes últimos 7 días</h3>
+          <h3 className="font-semibold text-eb-text mb-4">Mensajes últimos 7 días</h3>
           {msgData.length ? <MessagesChart data={msgData} /> : (
-            <div className="h-48 flex items-center justify-center text-gray-400 text-sm">Sin datos aún</div>
+            <div className="h-48 flex items-center justify-center text-eb-dim text-sm">Sin datos aún</div>
           )}
         </div>
 
         {/* Chat de prueba */}
         <div className="card flex flex-col gap-3">
-          <h3 className="font-semibold text-gray-800">Probar agente Sofia</h3>
+          <h3 className="font-semibold text-eb-text">Probar agente Sofia</h3>
           <div className="flex gap-2">
             <input
               type="text"
-              className="flex-1 border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-rose-300"
+              className="eb-input flex-1"
               placeholder="Escríbele a Sofia..."
               value={chatMsg}
               onChange={e => setChatMsg(e.target.value)}
@@ -88,8 +88,11 @@ export default function Dashboard({ setShowQR }: { setShowQR: (v: boolean) => vo
             </button>
           </div>
           {chatReply && (
-            <div className="bg-rose-50 border border-rose-100 rounded-lg p-3 text-sm text-gray-700">
-              <span className="font-semibold text-rose-600">Sofia:</span> {chatReply}
+            <div
+              className="rounded-xl p-3 text-sm text-eb-text"
+              style={{ background: 'rgba(225,29,72,0.08)', border: '1px solid rgba(225,29,72,0.2)' }}
+            >
+              <span className="font-semibold text-rose-400">Sofia:</span> {chatReply}
             </div>
           )}
         </div>
@@ -97,20 +100,22 @@ export default function Dashboard({ setShowQR }: { setShowQR: (v: boolean) => vo
 
       {/* Feed en vivo */}
       <div className="card">
-        <h3 className="font-semibold text-gray-800 mb-4">Feed en vivo</h3>
+        <h3 className="font-semibold text-eb-text mb-4">Feed en vivo</h3>
         {feed.length === 0 && (
-          <p className="text-sm text-gray-400 text-center py-6">Sin eventos aún — llega un mensaje y aparece aquí en tiempo real.</p>
+          <p className="text-sm text-eb-dim text-center py-6">
+            Sin eventos aún — llega un mensaje y aparece aquí en tiempo real.
+          </p>
         )}
         <div className="space-y-2 max-h-72 overflow-y-auto">
           {feed.map((item, i) => (
-            <div key={i} className="border-l-4 border-rose-300 pl-3 py-1">
-              <div className="flex items-center gap-2 text-xs text-gray-400 mb-0.5">
+            <div key={i} className="border-l-4 pl-3 py-1" style={{ borderColor: 'rgba(225,29,72,0.45)' }}>
+              <div className="flex items-center gap-2 text-xs text-eb-dim mb-0.5">
                 <span>{item.type === 'call_event' ? '📞' : '💬'}</span>
-                <span className="font-medium text-gray-600">{item.from}</span>
+                <span className="font-medium text-eb-muted">{item.from}</span>
                 <span>{item.ts}</span>
               </div>
-              {item.body && <p className="text-xs text-gray-700">👤 {item.body}</p>}
-              {item.response && <p className="text-xs text-rose-600">🤖 {item.response}</p>}
+              {item.body && <p className="text-xs text-eb-text">👤 {item.body}</p>}
+              {item.response && <p className="text-xs text-rose-400">🤖 {item.response}</p>}
             </div>
           ))}
         </div>

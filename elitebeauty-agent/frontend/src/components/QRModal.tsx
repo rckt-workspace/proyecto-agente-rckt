@@ -21,22 +21,39 @@ export default function QRModal({ onClose }: Props) {
   }, []);
 
   return (
-    <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
-      <div className="bg-white rounded-2xl p-8 w-80 text-center shadow-2xl">
-        <h2 className="text-lg font-bold text-gray-900 mb-1">Conectar WhatsApp</h2>
-        <p className="text-sm text-gray-500 mb-5">
+    <div
+      className="fixed inset-0 flex items-center justify-center z-50"
+      style={{ background: 'rgba(0,0,0,0.75)', backdropFilter: 'blur(8px)' }}
+    >
+      <div
+        className="rounded-2xl p-8 w-80 text-center"
+        style={{
+          background: 'linear-gradient(160deg, rgba(30,23,46,0.98), rgba(22,17,32,0.99))',
+          border: '1px solid rgba(34,25,50,1)',
+          boxShadow: '0 32px 80px rgba(0,0,0,0.7), 0 0 40px rgba(225,29,72,0.1)',
+        }}
+      >
+        <h2 className="text-lg font-display font-bold text-eb-text mb-1 tracking-wider uppercase">
+          Conectar WhatsApp
+        </h2>
+        <p className="text-sm text-eb-dim mb-5">
           Abre WhatsApp en tu teléfono → Dispositivos vinculados → Vincular
         </p>
         {loading ? (
-          <div className="h-48 flex items-center justify-center text-gray-400">Cargando QR...</div>
+          <div className="h-48 flex items-center justify-center text-eb-dim">Cargando QR...</div>
         ) : qrImage ? (
-          <img src={qrImage} alt="QR WhatsApp" className="w-full rounded-xl border-4 border-rose-100" />
+          <img
+            src={qrImage}
+            alt="QR WhatsApp"
+            className="w-full rounded-xl"
+            style={{ border: '4px solid rgba(225,29,72,0.2)' }}
+          />
         ) : status === 'ready' ? (
-          <div className="h-48 flex items-center justify-center text-green-600 font-bold text-lg">
+          <div className="h-48 flex items-center justify-center text-green-400 font-bold text-lg">
             WhatsApp conectado
           </div>
         ) : (
-          <div className="h-48 flex items-center justify-center text-gray-400 text-sm">
+          <div className="h-48 flex items-center justify-center text-eb-dim text-sm">
             Esperando QR del bridge
           </div>
         )}

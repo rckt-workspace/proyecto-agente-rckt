@@ -5,19 +5,25 @@ type Props = {
   color?: 'rose' | 'green' | 'blue' | 'purple';
 };
 
-const colors = {
-  rose:   'bg-rose-50 text-rose-600',
-  green:  'bg-green-50 text-green-600',
-  blue:   'bg-blue-50 text-blue-600',
-  purple: 'bg-purple-50 text-purple-600',
+const colorMap = {
+  rose:   { text: '#fb7185', glow: 'rgba(225,29,72,0.25)' },
+  green:  { text: '#4ade80', glow: 'rgba(74,222,128,0.2)' },
+  blue:   { text: '#38bdf8', glow: 'rgba(56,189,248,0.2)' },
+  purple: { text: '#c084fc', glow: 'rgba(192,132,252,0.2)' },
 };
 
 export default function KPICard({ label, value, sub, color = 'rose' }: Props) {
+  const { text, glow } = colorMap[color];
   return (
     <div className="card flex flex-col gap-2">
-      <p className="text-xs font-semibold text-gray-500 uppercase tracking-wide">{label}</p>
-      <p className={`text-3xl font-bold ${colors[color].split(' ')[1]}`}>{value}</p>
-      {sub && <p className="text-xs text-gray-400">{sub}</p>}
+      <p className="text-xs font-semibold text-eb-dim uppercase tracking-widest">{label}</p>
+      <p
+        className="text-3xl font-bold"
+        style={{ color: text, textShadow: `0 0 24px ${glow}` }}
+      >
+        {value}
+      </p>
+      {sub && <p className="text-xs text-eb-dim">{sub}</p>}
     </div>
   );
 }

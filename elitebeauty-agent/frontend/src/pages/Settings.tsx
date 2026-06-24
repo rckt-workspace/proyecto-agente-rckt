@@ -44,14 +44,16 @@ export default function Settings() {
 
   return (
     <div className="space-y-6 max-w-2xl">
-      <h2 className="text-xl font-bold text-gray-900">Configuración del agente</h2>
+      <h2 className="text-xl font-display font-bold text-eb-text tracking-wider uppercase">
+        Configuración del agente
+      </h2>
 
       {/* Modelo */}
       <div className="card space-y-3">
-        <h3 className="font-semibold text-gray-800">Modelo OpenRouter</h3>
-        <p className="text-xs text-gray-500">{getDesc('model')}</p>
+        <h3 className="font-semibold text-eb-text">Modelo OpenRouter</h3>
+        <p className="text-xs text-eb-dim">{getDesc('model')}</p>
         <select
-          className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-rose-300"
+          className="eb-select"
           value={values['model'] || ''}
           onChange={e => set('model', e.target.value)}
         >
@@ -64,16 +66,16 @@ export default function Settings() {
 
       {/* Parámetros */}
       <div className="card space-y-4">
-        <h3 className="font-semibold text-gray-800">Parámetros del agente</h3>
+        <h3 className="font-semibold text-eb-text">Parámetros del agente</h3>
         {(['rag_top_k', 'max_history', 'cooldown_ms'] as const).map(key => (
           <div key={key}>
-            <label className="text-xs font-medium text-gray-600 block mb-1">
-              {key} — <span className="font-normal text-gray-400">{getDesc(key)}</span>
+            <label className="text-xs font-medium text-eb-muted block mb-1">
+              {key} — <span className="font-normal text-eb-dim">{getDesc(key)}</span>
             </label>
             <div className="flex gap-2">
               <input
                 type="number"
-                className="flex-1 border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-rose-300"
+                className="eb-input flex-1"
                 value={values[key] || ''}
                 onChange={e => set(key, e.target.value)}
               />
@@ -87,11 +89,11 @@ export default function Settings() {
 
       {/* Horario */}
       <div className="card space-y-3">
-        <h3 className="font-semibold text-gray-800">Horario de atención</h3>
-        <p className="text-xs text-gray-500">JSON: {getDesc('business_hours')}</p>
+        <h3 className="font-semibold text-eb-text">Horario de atención</h3>
+        <p className="text-xs text-eb-dim">JSON: {getDesc('business_hours')}</p>
         <textarea
           rows={4}
-          className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm font-mono focus:outline-none focus:ring-2 focus:ring-rose-300"
+          className="eb-input font-mono"
           value={values['business_hours'] || ''}
           onChange={e => set('business_hours', e.target.value)}
         />
@@ -102,11 +104,12 @@ export default function Settings() {
 
       {/* Auth */}
       <div className="card space-y-3">
-        <h3 className="font-semibold text-gray-800">Autorización</h3>
-        <div className="flex items-center gap-3">
-          <label className="text-sm text-gray-700">Requerir autorización (require_auth)</label>
+        <h3 className="font-semibold text-eb-text">Autorización</h3>
+        <div className="flex items-center gap-3 flex-wrap">
+          <label className="text-sm text-eb-muted">Requerir autorización (require_auth)</label>
           <select
-            className="border border-gray-200 rounded-lg px-3 py-2 text-sm"
+            className="eb-select text-sm"
+            style={{ width: 'auto', flex: '1', minWidth: '180px' }}
             value={values['require_auth'] || 'false'}
             onChange={e => set('require_auth', e.target.value)}
           >
@@ -121,18 +124,18 @@ export default function Settings() {
 
       {/* Todos los configs */}
       <div className="card">
-        <h3 className="font-semibold text-gray-800 mb-4">Configuración completa</h3>
+        <h3 className="font-semibold text-eb-text mb-4">Configuración completa</h3>
         <div className="space-y-3">
           {config.map(c => (
             <div key={c.key} className="flex items-start gap-3">
               <div className="w-40 shrink-0">
-                <p className="text-xs font-mono font-semibold text-gray-700">{c.key}</p>
-                <p className="text-xs text-gray-400">{c.description}</p>
+                <p className="text-xs font-mono font-semibold text-eb-muted">{c.key}</p>
+                <p className="text-xs text-eb-dim">{c.description}</p>
               </div>
               <div className="flex-1 flex gap-2">
                 <input
                   type="text"
-                  className="flex-1 border border-gray-200 rounded-lg px-3 py-1.5 text-xs font-mono focus:outline-none focus:ring-1 focus:ring-rose-300"
+                  className="eb-input flex-1 font-mono text-xs"
                   value={values[c.key] || ''}
                   onChange={e => set(c.key, e.target.value)}
                 />

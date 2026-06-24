@@ -12,30 +12,48 @@ const links = [
 
 export default function Sidebar({ waStatus }: { waStatus: string }) {
   return (
-    <aside className="w-60 min-h-screen bg-white border-r border-gray-200 flex flex-col">
+    <aside
+      className="w-60 min-h-screen flex flex-col"
+      style={{
+        background: 'rgba(13, 10, 20, 0.75)',
+        borderRight: '1px solid rgba(34, 25, 50, 1)',
+        backdropFilter: 'blur(20px)',
+      }}
+    >
       {/* Logo */}
-      <div className="px-5 py-5 border-b border-gray-100">
+      <div className="px-5 py-5" style={{ borderBottom: '1px solid rgba(34, 25, 50, 1)' }}>
         <div className="flex items-center gap-2.5">
-          <div className="w-9 h-9 rounded-xl bg-rose-600 flex items-center justify-center text-white font-bold text-lg">
+          <div
+            className="w-9 h-9 rounded-xl flex items-center justify-center text-white font-bold text-sm"
+            style={{
+              background: 'linear-gradient(135deg, #e11d48, #9333ea)',
+              boxShadow: '0 0 18px rgba(225, 29, 72, 0.45)',
+            }}
+          >
             EB
           </div>
           <div>
-            <p className="font-bold text-sm text-gray-900">Elite Beauty</p>
-            <p className="text-xs text-gray-500">Panel IA</p>
+            <p className="font-display font-bold text-[10px] text-eb-text tracking-[0.2em] uppercase">
+              Elite Beauty
+            </p>
+            <p className="text-xs text-eb-dim">Panel IA</p>
           </div>
         </div>
       </div>
 
       {/* WA Status */}
-      <div className="px-5 py-3 border-b border-gray-100">
+      <div className="px-5 py-3" style={{ borderBottom: '1px solid rgba(34, 25, 50, 1)' }}>
         <div className="flex items-center gap-2 text-xs">
           <span
             className={`w-2 h-2 rounded-full ${
-              waStatus === 'ready' ? 'bg-green-500 animate-pulse' : 'bg-red-400'
+              waStatus === 'ready'
+                ? 'bg-green-400 animate-pulse shadow-[0_0_6px_rgba(74,222,128,0.7)]'
+                : 'bg-red-500/70'
             }`}
           />
-          <span className="text-gray-600">
-            WhatsApp: {waStatus === 'ready' ? 'Conectado' : waStatus === 'qr' ? 'Esperando QR' : 'Desconectado'}
+          <span className="text-eb-dim">
+            WhatsApp:{' '}
+            {waStatus === 'ready' ? 'Conectado' : waStatus === 'qr' ? 'Esperando QR' : 'Desconectado'}
           </span>
         </div>
       </div>
@@ -48,11 +66,23 @@ export default function Sidebar({ waStatus }: { waStatus: string }) {
             to={to}
             end={to === '/'}
             className={({ isActive }) =>
-              `flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-colors ${
+              `flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium transition-all duration-200 ${
                 isActive
-                  ? 'bg-rose-50 text-rose-700'
-                  : 'text-gray-600 hover:bg-gray-50 hover:text-gray-900'
+                  ? 'text-rose-400'
+                  : 'text-eb-dim hover:text-eb-text'
               }`
+            }
+            style={({ isActive }) =>
+              isActive
+                ? {
+                    background: 'rgba(225, 29, 72, 0.08)',
+                    border: '1px solid rgba(225, 29, 72, 0.2)',
+                    boxShadow: 'inset 0 0 12px rgba(225, 29, 72, 0.06)',
+                  }
+                : {
+                    background: 'transparent',
+                    border: '1px solid transparent',
+                  }
             }
           >
             <span className="text-base">{icon}</span>
@@ -61,7 +91,10 @@ export default function Sidebar({ waStatus }: { waStatus: string }) {
         ))}
       </nav>
 
-      <div className="px-5 py-4 border-t border-gray-100 text-xs text-gray-400">
+      <div
+        className="px-5 py-4 text-xs text-eb-dim font-mono"
+        style={{ borderTop: '1px solid rgba(34, 25, 50, 1)' }}
+      >
         v1.0.0 · Elite Beauty Agent
       </div>
     </aside>

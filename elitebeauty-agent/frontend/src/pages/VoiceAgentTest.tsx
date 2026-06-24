@@ -4,6 +4,8 @@ import { useWebSocket, type WSEvent } from '../lib/ws';
 
 type Turn = { role: 'user' | 'agent'; text: string; ms?: number };
 
+const BORDER = 'rgba(34, 25, 50, 1)';
+
 export default function VoiceAgentTest() {
   const [turns, setTurns] = useState<Turn[]>([]);
   const [input, setInput] = useState('');
@@ -34,36 +36,60 @@ export default function VoiceAgentTest() {
 
   return (
     <div className="space-y-6">
-      <h2 className="text-xl font-bold text-gray-900">Prueba del agente de voz</h2>
-      <p className="text-sm text-gray-500">
-        Simula una llamada con Sofia. Los mensajes se envían al backend con canal <code className="bg-gray-100 px-1 rounded">voice</code> para usar el prompt optimizado para voz.
+      <h2 className="text-xl font-display font-bold text-eb-text tracking-wider uppercase">
+        Prueba del agente de voz
+      </h2>
+      <p className="text-sm text-eb-dim">
+        Simula una llamada con Sofia. Los mensajes se envían al backend con canal{' '}
+        <code
+          className="px-1.5 py-0.5 rounded text-rose-400 font-mono text-xs"
+          style={{ background: 'rgba(225,29,72,0.1)' }}
+        >
+          voice
+        </code>{' '}
+        para usar el prompt optimizado para voz.
       </p>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         {/* Conversación simulada */}
         <div className="lg:col-span-2 card flex flex-col" style={{ height: '480px' }}>
-          <div className="flex items-center justify-between pb-3 border-b border-gray-100 mb-3">
+          <div
+            className="flex items-center justify-between pb-3 mb-3"
+            style={{ borderBottom: `1px solid ${BORDER}` }}
+          >
             <div className="flex items-center gap-2">
-              <span className="text-green-500 text-lg">📞</span>
-              <span className="font-semibold text-gray-800">Llamada simulada</span>
+              <span className="text-green-400 text-lg">📞</span>
+              <span className="font-semibold text-eb-text">Llamada simulada</span>
             </div>
-            <button onClick={() => setTurns([])} className="text-xs text-gray-400 hover:text-gray-600">Limpiar</button>
+            <button
+              onClick={() => setTurns([])}
+              className="text-xs text-eb-dim hover:text-eb-muted transition-colors"
+            >
+              Limpiar
+            </button>
           </div>
 
           <div className="flex-1 overflow-y-auto space-y-3 pb-3">
             {turns.length === 0 && (
-              <p className="text-center text-gray-400 text-sm pt-8">
+              <p className="text-center text-eb-dim text-sm pt-8">
                 Escribe algo para simular lo que diría el usuario en la llamada
               </p>
             )}
             {turns.map((t, i) => (
               <div key={i} className={`flex ${t.role === 'agent' ? 'justify-start' : 'justify-end'}`}>
-                <div className={`max-w-sm rounded-2xl px-4 py-2.5 text-sm ${
-                  t.role === 'agent'
-                    ? 'bg-purple-50 border border-purple-100 text-gray-700'
-                    : 'bg-rose-600 text-white'
-                }`}>
-                  {t.role === 'agent' && <p className="text-xs text-purple-400 mb-0.5 font-medium">Sofia</p>}
+                <div
+                  className={`max-w-sm rounded-2xl px-4 py-2.5 text-sm ${
+                    t.role === 'agent' ? 'text-eb-text' : 'bg-rose-600 text-white'
+                  }`}
+                  style={
+                    t.role === 'agent'
+                      ? { background: 'rgba(147,51,234,0.1)', border: '1px solid rgba(147,51,234,0.22)' }
+                      : {}
+                  }
+                >
+                  {t.role === 'agent' && (
+                    <p className="text-xs text-purple-400 mb-0.5 font-medium">Sofia</p>
+                  )}
                   {t.text}
                   {t.ms && <p className="text-xs opacity-50 mt-1">{t.ms}ms</p>}
                 </div>
@@ -71,7 +97,10 @@ export default function VoiceAgentTest() {
             ))}
             {loading && (
               <div className="flex justify-start">
-                <div className="bg-purple-50 border border-purple-100 rounded-2xl px-4 py-3">
+                <div
+                  className="rounded-2xl px-4 py-3"
+                  style={{ background: 'rgba(147,51,234,0.1)', border: '1px solid rgba(147,51,234,0.22)' }}
+                >
                   <div className="flex gap-1">
                     <span className="w-1.5 h-1.5 bg-purple-400 rounded-full animate-bounce" style={{ animationDelay: '0ms' }} />
                     <span className="w-1.5 h-1.5 bg-purple-400 rounded-full animate-bounce" style={{ animationDelay: '150ms' }} />
@@ -82,16 +111,26 @@ export default function VoiceAgentTest() {
             )}
           </div>
 
-          <div className="flex gap-2 pt-3 border-t border-gray-100">
+          <div className="flex gap-2 pt-3" style={{ borderTop: `1px solid ${BORDER}` }}>
             <input
               type="text"
-              className="flex-1 border border-gray-200 rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-purple-300"
+              className="eb-input flex-1"
+              style={{ borderRadius: '0.75rem' }}
               placeholder="Lo que diría el usuario en la llamada..."
               value={input}
               onChange={e => setInput(e.target.value)}
               onKeyDown={e => e.key === 'Enter' && send()}
             />
-            <button onClick={send} disabled={loading} className="bg-purple-600 hover:bg-purple-700 text-white font-semibold px-4 py-2.5 rounded-xl transition-colors text-sm">
+            <button
+              onClick={send}
+              disabled={loading}
+              className="text-white font-semibold px-4 py-2.5 rounded-xl transition-all text-sm"
+              style={{
+                background: 'linear-gradient(135deg, #7c3aed, #9333ea)',
+                boxShadow: loading ? 'none' : '0 6px 20px rgba(147,51,234,0.35)',
+                opacity: loading ? 0.5 : 1,
+              }}
+            >
               {loading ? '...' : '📤 Enviar'}
             </button>
           </div>
@@ -99,31 +138,38 @@ export default function VoiceAgentTest() {
 
         {/* Eventos de llamadas reales */}
         <div className="card">
-          <h3 className="font-semibold text-gray-800 mb-4">Eventos Twilio en vivo</h3>
+          <h3 className="font-semibold text-eb-text mb-4">Eventos Twilio en vivo</h3>
           {events.length === 0 && (
-            <p className="text-xs text-gray-400 text-center py-4">
+            <p className="text-xs text-eb-dim text-center py-4">
               Aquí aparecerán los eventos de llamadas reales via Twilio
             </p>
           )}
           <div className="space-y-2">
             {events.map((e, i) => (
-              <div key={i} className="bg-gray-50 rounded-lg p-2.5 text-xs">
+              <div
+                key={i}
+                className="rounded-xl p-2.5 text-xs"
+                style={{ background: 'rgba(255,255,255,0.04)', border: `1px solid ${BORDER}` }}
+              >
                 <div className="flex justify-between mb-1">
-                  <span className="font-medium text-gray-700">{e.event}</span>
-                  <span className="text-gray-400">{e.ts}</span>
+                  <span className="font-medium text-eb-muted">{e.event}</span>
+                  <span className="text-eb-dim">{e.ts}</span>
                 </div>
-                {e.from && <p className="text-gray-500">De: {e.from}</p>}
-                {e.duration && <p className="text-gray-500">Duración: {e.duration}s</p>}
+                {e.from && <p className="text-eb-dim">De: {e.from}</p>}
+                {e.duration && <p className="text-eb-dim">Duración: {e.duration}s</p>}
               </div>
             ))}
           </div>
 
-          <div className="mt-6 pt-4 border-t border-gray-100">
-            <p className="text-xs font-semibold text-gray-600 mb-2">Configurar Twilio webhook</p>
-            <div className="bg-gray-900 text-green-400 rounded-lg p-3 text-xs font-mono">
-              <p>POST /voice/incoming</p>
-              <p className="text-gray-500 mt-1">URL de producción:</p>
-              <p>https://tu-dominio/voice/incoming</p>
+          <div className="mt-6 pt-4" style={{ borderTop: `1px solid ${BORDER}` }}>
+            <p className="text-xs font-semibold text-eb-muted mb-2">Configurar Twilio webhook</p>
+            <div
+              className="rounded-xl p-3 text-xs font-mono"
+              style={{ background: 'rgba(0,0,0,0.5)', border: `1px solid ${BORDER}` }}
+            >
+              <p className="text-green-400">POST /voice/incoming</p>
+              <p className="text-eb-dim mt-1">URL de producción:</p>
+              <p className="text-eb-muted">https://tu-dominio/voice/incoming</p>
             </div>
           </div>
         </div>
