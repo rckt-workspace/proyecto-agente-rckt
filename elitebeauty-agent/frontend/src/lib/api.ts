@@ -59,6 +59,11 @@ export const deleteDoc = (id: string) => api.delete(`/api/docs/${id}`).then(r =>
 export const embedDoc = (id: string) =>
   api.post(`/api/docs/${id}/embed`).then(r => r.data);
 
+export const uploadDoc = (formData: FormData) =>
+  api.post('/api/docs/upload', formData, {
+    headers: { 'Content-Type': 'multipart/form-data' },
+  }).then(r => r.data);
+
 // ─── Config ───────────────────────────────────────────────────────────────────
 export const getConfig = () => api.get('/api/config').then(r => r.data);
 

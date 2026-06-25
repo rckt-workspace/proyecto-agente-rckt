@@ -1,9 +1,11 @@
 import asyncio
 import logging
-from fastapi import APIRouter, HTTPException, BackgroundTasks
+from pathlib import Path
+from fastapi import APIRouter, HTTPException, BackgroundTasks, UploadFile, File, Form
 from app.db.models import DocumentCreate, DocumentUpdate
 from app.db import supabase_client as db
 from app.db.vector import embed_document, embeddings_configured
+from app.utils.file_parser import parse_file, title_from_filename, SUPPORTED_EXTENSIONS
 
 logger = logging.getLogger(__name__)
 router = APIRouter(prefix="/api/docs", tags=["docs"])
@@ -30,6 +32,48 @@ async def create_doc(body: DocumentCreate, background_tasks: BackgroundTasks):
     doc = await db.create_document(body.model_dump(exclude_none=True))
     if embeddings_configured():
         background_tasks.add_task(_embed_bg, str(doc["id"]), doc["content"])
+    return doc
+
+
+@router.post("/upload")
+async def upload_doc(
+    background_tasks: BackgroundTasks,
+    file: UploadFile = File(...),
+    title: str = Form(""),
+    category: str = Form("general"),
+    source: str = Form("archivo"),
+):
+    ext = Path(file.filename or "").suffix.lower()
+    if ext not in SUPPORTED_EXTENSIONS:
+        raise HTTPException(
+            400,
+            f"Formato no soportado '{ext}'. Usa: PDF, DOCX, TXT, MD, JSON o XML",
+        )
+
+    content_bytes = await file.read()
+    if not content_bytes:
+        raise HTTPException(400, "El archivo está vacío")
+
+    try:
+        text = parse_file(file.filename, content_bytes)
+    except ValueError as exc:
+        raise HTTPException(400, str(exc))
+
+    if not text.strip():
+        raise HTTPException(400, "No se pudo extraer texto del archivo")
+
+    doc_title = title.strip() or title_from_filename(file.filename or "documento")
+
+    doc = await db.create_document({
+        "title": doc_title,
+        "content": text.strip(),
+        "category": category or "general",
+        "source": source or "archivo",
+    })
+
+    if embeddings_configured():
+        background_tasks.add_task(_embed_bg, str(doc["id"]), doc["content"])
+
     return doc
 
 
