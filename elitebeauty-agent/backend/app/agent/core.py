@@ -1,6 +1,6 @@
 import logging
 import re
-from app.agent import openrouter, rag
+from app.agent import llm_client, rag
 from app.agent.prompts import build_whatsapp_prompt, build_voice_prompt
 from app.db import supabase_client as db
 from app.config import settings
@@ -59,7 +59,6 @@ async def run_agent(
     Returns: (reply, tokens_used, latency_ms, rag_chunks)
     """
     # Configuración desde DB
-    model = model_override or await db.get_config_value("model") or settings.openrouter_model
     max_hist = int(await db.get_config_value("max_history") or settings.max_history)
     top_k = int(await db.get_config_value("rag_top_k") or settings.rag_top_k)
 
@@ -81,12 +80,11 @@ async def run_agent(
         messages.append({"role": h["role"], "content": h["content"]})
     messages.append({"role": "user", "content": message[:2000]})
 
-    # 5. Llamar a OpenRouter
-    max_tokens = 150 if channel == "voice" else 300
-    reply, tokens, latency = await openrouter.ask(
+    # 5. LLM router: primary → fallback → cross-provider → respuesta local segura
+    reply, tokens, latency = await llm_client.generate_chat_response(
         messages=messages,
-        model=model,
-        max_tokens=max_tokens,
+        channel=channel,
+        model_override=model_override,
     )
 
     # 6. Guardar mensajes en DB

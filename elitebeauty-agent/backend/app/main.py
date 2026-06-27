@@ -95,13 +95,14 @@ async def health():
     from app.agent.openrouter import health_check
     or_ok = await health_check()
     supabase_ok = supabase_is_configured()
-    status = "ok" if or_ok and supabase_ok else "degraded"
+    status = "ok" if (or_ok or settings.has_anthropic) and supabase_ok else "degraded"
     return {
         "status": status,
-        "openrouter": "online" if or_ok else "offline",
+        "llm_provider": settings.llm_provider,
+        "openrouter": "online" if or_ok else ("not_configured" if not settings.has_openrouter else "offline"),
+        "anthropic": "configured" if settings.has_anthropic else "not_configured",
         "supabase": "configured" if supabase_ok else "not_configured",
         "twilio": "configured" if settings.has_twilio else "not_configured",
         "openai_embeddings": "configured" if settings.has_openai_embeddings else "not_configured",
         "tavily": "configured" if settings.has_tavily else "not_configured",
-        "model": settings.openrouter_model,
     }

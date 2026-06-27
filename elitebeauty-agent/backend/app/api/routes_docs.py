@@ -1,7 +1,7 @@
-import asyncio
 import logging
 from pathlib import Path
 from fastapi import APIRouter, HTTPException, BackgroundTasks, UploadFile, File, Form
+from app.config import settings
 from app.db.models import DocumentCreate, DocumentUpdate
 from app.db import supabase_client as db
 from app.db.vector import embed_document, embeddings_configured
@@ -11,16 +11,23 @@ logger = logging.getLogger(__name__)
 router = APIRouter(prefix="/api/docs", tags=["docs"])
 
 
-async def _embed_bg(doc_id: str, content: str):
+async def _embed_bg(doc_id: str, content: str) -> None:
+    """Tarea de fondo: indexa un documento y maneja errores sin romper el servidor."""
     if not embeddings_configured():
-        logger.warning("OPENAI_API_KEY no configurada, embedding omitido")
+        logger.warning(
+            f"Motor de embeddings no configurado "
+            f"(EMBEDDINGS_PROVIDER={settings.embeddings_provider}). "
+            f"Documento {doc_id} queda pendiente."
+        )
         return
     try:
         count = await embed_document(doc_id, content)
-        logger.info(f"Embebido doc {doc_id}: {count} chunks")
-    except Exception as e:
-        logger.error(f"Error embebiendo doc {doc_id}: {e}")
+        logger.info(f"Indexado doc {doc_id}: {count} chunks")
+    except Exception as exc:
+        logger.error(f"Error indexando doc {doc_id}: {exc}", exc_info=True)
 
+
+# ─── Rutas de colección ───────────────────────────────────────────────────────
 
 @router.get("")
 async def list_docs():
@@ -47,7 +54,7 @@ async def upload_doc(
     if ext not in SUPPORTED_EXTENSIONS:
         raise HTTPException(
             400,
-            f"Formato no soportado '{ext}'. Usa: PDF, DOCX, TXT, MD, JSON o XML",
+            f"Formato no soportado '{ext}'. Formatos aceptados: {', '.join(sorted(SUPPORTED_EXTENSIONS))}",
         )
 
     content_bytes = await file.read()
@@ -76,6 +83,23 @@ async def upload_doc(
 
     return doc
 
+
+@router.post("/index-pending")
+async def index_pending(background_tasks: BackgroundTasks):
+    """Encola la indexación de todos los documentos con embedded=false."""
+    if not embeddings_configured():
+        raise HTTPException(
+            400,
+            "Motor de embeddings no configurado. "
+            "Verifica EMBEDDINGS_PROVIDER en .env (local, openrouter u openai).",
+        )
+    docs = await db.list_pending_documents()
+    for doc in docs:
+        background_tasks.add_task(_embed_bg, str(doc["id"]), doc["content"])
+    return {"ok": True, "queued": len(docs)}
+
+
+# ─── Rutas de documento individual ───────────────────────────────────────────
 
 @router.get("/{doc_id}")
 async def get_doc(doc_id: str):
@@ -108,10 +132,15 @@ async def delete_doc(doc_id: str):
 
 @router.post("/{doc_id}/embed")
 async def force_embed(doc_id: str, background_tasks: BackgroundTasks):
+    """Fuerza la re-indexación de un documento específico."""
     doc = await db.get_document(doc_id)
     if not doc:
         raise HTTPException(404, "Documento no encontrado")
     if not embeddings_configured():
-        raise HTTPException(400, "OPENAI_API_KEY no configurada")
+        raise HTTPException(
+            400,
+            "Motor de embeddings no configurado. "
+            "Verifica EMBEDDINGS_PROVIDER en .env (local, openrouter u openai).",
+        )
     background_tasks.add_task(_embed_bg, doc_id, doc["content"])
-    return {"ok": True, "message": "Embedding iniciado en background"}
+    return {"ok": True, "message": "Indexación iniciada en background"}

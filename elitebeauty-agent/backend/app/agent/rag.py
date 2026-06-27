@@ -8,7 +8,7 @@ logger = logging.getLogger(__name__)
 
 async def search_internal(query: str, top_k: int) -> tuple[str, int]:
     """Busca chunks relevantes en pgvector (base de conocimiento interna)."""
-    if not settings.has_openai_embeddings or not settings.has_supabase:
+    if not settings.has_embeddings or not settings.has_supabase:
         return "", 0
     try:
         results = await search_similar(query, top_k=top_k)

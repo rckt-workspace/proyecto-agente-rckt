@@ -178,6 +178,19 @@ async def list_documents() -> list[dict]:
     return db.table("documents").select("*").order("created_at", desc=True).execute().data or []
 
 
+async def list_pending_documents() -> list[dict]:
+    """Retorna documentos con embedded=false."""
+    db = get_client()
+    return (
+        db.table("documents")
+        .select("*")
+        .eq("embedded", False)
+        .order("created_at", desc=True)
+        .execute()
+        .data or []
+    )
+
+
 async def get_document(doc_id: str) -> dict | None:
     db = get_client()
     result = db.table("documents").select("*").eq("id", doc_id).limit(1).execute()
