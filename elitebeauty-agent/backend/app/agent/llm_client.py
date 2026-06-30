@@ -41,15 +41,23 @@ async def _load_cfg() -> dict[str, str]:
     """Load all agent_config from Supabase in a single call. Returns {} on error."""
     try:
         rows = await db.get_all_config()
-        return {r["key"]: (r["value"] or "").strip() for r in rows if r.get("key")}
+        cfg = {r["key"]: (r["value"] or "").strip() for r in rows if r.get("key")}
+        logger.info(f"[TRACE] agent_config cargado desde Supabase: {len(cfg)} claves → {list(cfg.keys())}")
+        return cfg
     except Exception as e:
-        logger.warning(f"agent_config no disponible, usando .env: {e}")
+        logger.warning(f"[TRACE] agent_config no disponible, usando .env: {e}")
         return {}
 
 
 def _v(cfg: dict, key: str, fallback: str = "") -> str:
     """Read key from cfg dict with an optional fallback."""
-    return cfg.get(key, "").strip() or fallback
+    supabase_val = cfg.get(key, "").strip()
+    if supabase_val:
+        logger.debug(f"[TRACE] cfg[{key}] = '{supabase_val}' (fuente: Supabase)")
+        return supabase_val
+    if fallback:
+        logger.debug(f"[TRACE] cfg[{key}] = '{fallback}' (fuente: .env/default)")
+    return fallback
 
 
 # ─── Provider helpers ─────────────────────────────────────────────────────────
@@ -149,6 +157,11 @@ async def _call_openrouter(
     async with httpx.AsyncClient(timeout=timeout) as client:
         resp = await client.post(f"{base}/chat/completions", headers=headers, json=payload)
     latency_ms = int((time.monotonic() - t0) * 1000)
+    if not resp.is_success:
+        logger.error(
+            f"[TRACE] OpenRouter HTTP {resp.status_code} para modelo='{model}' | "
+            f"body: {resp.text[:500]}"
+        )
     resp.raise_for_status()
     data = resp.json()
     reply = data["choices"][0]["message"]["content"].strip()
@@ -191,6 +204,11 @@ async def _call_anthropic(
     async with httpx.AsyncClient(timeout=timeout) as client:
         resp = await client.post(f"{base}/v1/messages", headers=headers, json=payload)
     latency_ms = int((time.monotonic() - t0) * 1000)
+    if not resp.is_success:
+        logger.error(
+            f"[TRACE] Anthropic HTTP {resp.status_code} para modelo='{model}' | "
+            f"body: {resp.text[:500]}"
+        )
     resp.raise_for_status()
     data = resp.json()
     reply = data["content"][0]["text"].strip()
@@ -350,8 +368,17 @@ async def generate_chat_response(
     # ── Build call chain ───────────────────────────────────────────────────────
     chain = _build_chain(provider, fallback_provider, use_fallback, cfg, model_override)
 
+    logger.info(
+        f"[TRACE] Router resuelto → provider='{provider}' "
+        f"fallback_provider='{fallback_provider}' "
+        f"use_fallback={use_fallback} | "
+        f"anthropic_ready={_provider_ready('anthropic')} "
+        f"openrouter_ready={_provider_ready('openrouter')} | "
+        f"chain={chain}"
+    )
+
     if not chain:
-        logger.error("No hay ningún proveedor LLM configurado con credenciales válidas")
+        logger.error("[TRACE] No hay ningún proveedor LLM configurado con credenciales válidas — revisá ANTHROPIC_API_KEY y OPENROUTER_API_KEY en .env")
         return _LOCAL_FALLBACK, 0, 0
 
     # ── Execute chain ──────────────────────────────────────────────────────────
