@@ -134,11 +134,12 @@ def _build_chain(
 async def _call_openrouter(
     model: str,
     messages: list[dict],
-    temperature: float,
-    top_p: float,
+    temperature: float | None,
+    top_p: float | None,
     max_tokens: int,
     timeout: float,
 ) -> tuple[str, int, int]:
+    # OpenRouter acepta temperature y top_p juntos o por separado.
     base = (settings.openrouter_base_url or "https://openrouter.ai/api/v1").rstrip("/")
     headers = {
         "Authorization": f"Bearer {settings.openrouter_api_key}",
@@ -146,13 +147,12 @@ async def _call_openrouter(
         "X-Title": settings.your_site_name,
         "Content-Type": "application/json",
     }
-    payload = {
-        "model": model,
-        "messages": messages,
-        "temperature": temperature,
-        "top_p": top_p,
-        "max_tokens": max_tokens,
-    }
+    payload: dict = {"model": model, "messages": messages, "max_tokens": max_tokens}
+    if temperature is not None:
+        payload["temperature"] = temperature
+    if top_p is not None:
+        payload["top_p"] = top_p
+    logger.info(f"[TRACE] OpenRouter payload → model='{model}' temperature={temperature} top_p={top_p} max_tokens={max_tokens}")
     t0 = time.monotonic()
     async with httpx.AsyncClient(timeout=timeout) as client:
         resp = await client.post(f"{base}/chat/completions", headers=headers, json=payload)
@@ -173,11 +173,13 @@ async def _call_openrouter(
 async def _call_anthropic(
     model: str,
     messages: list[dict],
-    temperature: float,
-    top_p: float,
+    temperature: float | None,
+    top_p: float | None,
     max_tokens: int,
     timeout: float,
 ) -> tuple[str, int, int]:
+    # Anthropic no acepta temperature y top_p al mismo tiempo.
+    # Se prioriza temperature; si no hay temperature, se usa top_p.
     base = (settings.anthropic_base_url or "https://api.anthropic.com").rstrip("/")
     system_content = ""
     chat_messages: list[dict] = []
@@ -191,15 +193,15 @@ async def _call_anthropic(
         "anthropic-version": "2023-06-01",
         "Content-Type": "application/json",
     }
-    payload: dict = {
-        "model": model,
-        "messages": chat_messages,
-        "temperature": temperature,
-        "top_p": top_p,
-        "max_tokens": max_tokens,
-    }
+    payload: dict = {"model": model, "messages": chat_messages, "max_tokens": max_tokens}
+    if temperature is not None:
+        payload["temperature"] = temperature
+    elif top_p is not None:
+        payload["top_p"] = top_p
     if system_content:
         payload["system"] = system_content
+    used_param = f"temperature={temperature}" if temperature is not None else f"top_p={top_p}"
+    logger.info(f"[TRACE] Anthropic payload → model='{model}' {used_param} max_tokens={max_tokens}")
     t0 = time.monotonic()
     async with httpx.AsyncClient(timeout=timeout) as client:
         resp = await client.post(f"{base}/v1/messages", headers=headers, json=payload)
