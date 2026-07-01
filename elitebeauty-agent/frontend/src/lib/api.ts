@@ -9,7 +9,7 @@ export const api = axios.create({
 
 // ─── Chat ─────────────────────────────────────────────────────────────────────
 export const sendChat = (message: string, channel = 'whatsapp') =>
-  api.post('/api/chat', { message, channel }).then(r => r.data);
+  api.post('/api/chat', { message, channel }, { timeout: 120000 }).then(r => r.data);
 
 // ─── Conversations ────────────────────────────────────────────────────────────
 export const getConversations = (params?: Record<string, string>) =>

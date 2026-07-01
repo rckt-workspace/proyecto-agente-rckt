@@ -53,6 +53,25 @@ async def search_web(query: str) -> str:
         return ""
 
 
+_RAG_TIMEOUT = 10.0  # segundos máximos por fuente RAG
+
+
+async def _safe_search_internal(query: str, k: int) -> tuple[str, int]:
+    try:
+        return await asyncio.wait_for(search_internal(query, k), timeout=_RAG_TIMEOUT)
+    except asyncio.TimeoutError:
+        logger.warning(f"RAG interno: timeout ({_RAG_TIMEOUT}s) — continuando sin contexto interno")
+        return "", 0
+
+
+async def _safe_search_web(query: str) -> str:
+    try:
+        return await asyncio.wait_for(search_web(query), timeout=_RAG_TIMEOUT)
+    except asyncio.TimeoutError:
+        logger.warning(f"RAG web: timeout ({_RAG_TIMEOUT}s) — continuando sin contexto web")
+        return ""
+
+
 async def get_context(query: str, top_k: int | None = None) -> tuple[str, int]:
     """
     RAG mixto: lanza búsqueda interna (pgvector) y web (Tavily) en paralelo.
@@ -62,8 +81,8 @@ async def get_context(query: str, top_k: int | None = None) -> tuple[str, int]:
     k = top_k or settings.rag_top_k
 
     (internal_ctx, num_chunks), web_ctx = await asyncio.gather(
-        search_internal(query, k),
-        search_web(query),
+        _safe_search_internal(query, k),
+        _safe_search_web(query),
     )
 
     sections = []

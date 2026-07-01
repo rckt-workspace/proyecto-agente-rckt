@@ -43,8 +43,17 @@ export default function Dashboard({ setShowQR: _setShowQR }: { setShowQR: (v: bo
     try {
       const data = await sendChat(chatMsg);
       setChatReply(data.response || '');
-    } catch { setChatReply('Error al conectar con el agente'); }
-    finally { setChatLoading(false); }
+    } catch (err: any) {
+      console.error('[Dashboard] Error llamando /api/chat:', err);
+      const isTimeout = err?.code === 'ECONNABORTED' || err?.code === 'ERR_CANCELED';
+      setChatReply(
+        isTimeout
+          ? 'Sofia está tardando más de lo normal. Intenta de nuevo en unos segundos.'
+          : 'No se pudo conectar con el backend. Verifica que el servicio esté activo.'
+      );
+    } finally {
+      setChatLoading(false);
+    }
   };
 
   return (

@@ -1,3 +1,4 @@
+import asyncio
 import logging
 from contextlib import asynccontextmanager
 import httpx
@@ -19,9 +20,22 @@ logging.basicConfig(
 logger = logging.getLogger(__name__)
 
 
+async def _warmup_embeddings():
+    """Precalienta el modelo de embeddings en background para evitar cold-start en la primera petición."""
+    try:
+        from app.config import settings as _s
+        if (_s.embeddings_provider or "local").lower() == "local":
+            from app.db.vector import _load_st_model
+            await asyncio.to_thread(_load_st_model)
+            logger.info("Warmup embeddings: modelo local listo")
+    except Exception as e:
+        logger.warning(f"Warmup embeddings falló (no crítico): {e}")
+
+
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     logger.info("Elite Beauty Agent iniciando...")
+    asyncio.create_task(_warmup_embeddings())
     yield
     logger.info("Elite Beauty Agent detenido.")
 
