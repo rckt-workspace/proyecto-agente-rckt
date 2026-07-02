@@ -110,6 +110,11 @@ async def root():
     }
 
 
+@app.head("/")
+async def root_head():
+    return None
+
+
 @app.get("/health")
 async def health():
     from app.agent.openrouter import health_check
