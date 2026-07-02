@@ -13,7 +13,7 @@ const { Client, LocalAuth } = whatsappWeb;
 
 const BACKEND_URL = (process.env.BACKEND_URL || 'http://backend:8000').replace(/\/$/, '');
 const SESSION_DIR = process.env.WA_SESSION_DIR || './session';
-const PORT = Number(process.env.WA_BRIDGE_PORT || 3001);
+const PORT = Number(process.env.PORT || process.env.WA_BRIDGE_PORT || 3001);
 const PUPPETEER_PATH = process.env.PUPPETEER_EXECUTABLE_PATH;
 
 const app = express();

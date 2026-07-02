@@ -100,6 +100,7 @@ class Settings(BaseSettings):
     # URLs
     public_base_url: str = "http://localhost:8000"
     wa_bridge_url: str = "http://wa_bridge:3001"
+    cors_origins: str = "*"  # comma-separated list or "*" for any origin
 
     # App
     backend_port: int = 8000

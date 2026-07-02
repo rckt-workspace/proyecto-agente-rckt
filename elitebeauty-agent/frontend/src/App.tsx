@@ -54,7 +54,17 @@ export default function App() {
                 title={connected ? 'WebSocket conectado' : 'WebSocket desconectado'}
               />
               {waStatus !== 'ready' && (
-                <button onClick={() => setShowQR(true)} className="btn-primary text-xs py-1.5 px-3">
+                <button
+                  onClick={() => {
+                    const bridgeUrl = import.meta.env.VITE_WA_BRIDGE_PUBLIC_URL;
+                    if (bridgeUrl) {
+                      window.open(`${bridgeUrl}/panel`, '_blank', 'noopener,noreferrer');
+                    } else {
+                      setShowQR(true);
+                    }
+                  }}
+                  className="btn-primary text-xs py-1.5 px-3"
+                >
                   Conectar WhatsApp
                 </button>
               )}
