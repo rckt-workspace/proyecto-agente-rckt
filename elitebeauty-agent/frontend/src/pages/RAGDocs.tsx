@@ -121,7 +121,7 @@ export default function RAGDocs() {
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center justify-between">
+      <div className="flex items-center justify-between gap-3 flex-wrap">
         <h2 className="text-xl font-display font-bold text-eb-text tracking-wider uppercase">
           Base de conocimiento (RAG)
         </h2>
@@ -163,7 +163,7 @@ export default function RAGDocs() {
           {/* ── Modo texto ── */}
           {(formMode === 'text' || editing) && (
             <>
-              <div className="grid grid-cols-2 gap-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div>
                   <label className="text-xs font-medium text-eb-muted block mb-1">Título</label>
                   <input
@@ -262,7 +262,7 @@ export default function RAGDocs() {
               {/* Metadatos del archivo */}
               {uploadFile && (
                 <div className="space-y-3">
-                  <div className="grid grid-cols-2 gap-4">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                     <div>
                       <label className="text-xs font-medium text-eb-muted block mb-1">Título</label>
                       <input
@@ -320,7 +320,7 @@ export default function RAGDocs() {
       <div className="grid grid-cols-1 gap-3">
         {docs.map(doc => (
           <div key={doc.id} className="card">
-            <div className="flex items-start justify-between gap-4">
+            <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-3 sm:gap-4">
               <div className="flex-1 min-w-0">
                 <div className="flex items-center gap-2 mb-1 flex-wrap">
                   <h4 className="font-semibold text-eb-text text-sm">{doc.title}</h4>
@@ -343,7 +343,7 @@ export default function RAGDocs() {
                 <p className="text-xs text-eb-dim line-clamp-2">{doc.content}</p>
                 {doc.source && <p className="text-xs text-eb-dim mt-1">Fuente: {doc.source}</p>}
               </div>
-              <div className="flex items-center gap-1.5 shrink-0">
+              <div className="flex items-center gap-1.5 flex-wrap shrink-0">
                 <button
                   onClick={() => reEmbed(doc.id)}
                   disabled={embedLoading === doc.id}

@@ -52,7 +52,7 @@ export default function VoiceAgentTest() {
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         {/* Conversación simulada */}
-        <div className="lg:col-span-2 card flex flex-col" style={{ height: '480px' }}>
+        <div className="lg:col-span-2 card flex flex-col h-[70vh] max-h-[480px] lg:h-[480px]">
           <div
             className="flex items-center justify-between pb-3 mb-3"
             style={{ borderBottom: `1px solid ${BORDER}` }}

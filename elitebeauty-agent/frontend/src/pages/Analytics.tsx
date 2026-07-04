@@ -38,7 +38,7 @@ export default function Analytics() {
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center justify-between">
+      <div className="flex items-center justify-between gap-3 flex-wrap">
         <h2 className="text-xl font-display font-bold text-eb-text tracking-wider uppercase">Analítica</h2>
         <div className="flex gap-1.5">
           {PERIODS.map(p => (

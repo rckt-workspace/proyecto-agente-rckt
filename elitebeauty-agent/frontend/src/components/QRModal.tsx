@@ -22,11 +22,11 @@ export default function QRModal({ onClose }: Props) {
 
   return (
     <div
-      className="fixed inset-0 flex items-center justify-center z-50"
+      className="fixed inset-0 flex items-center justify-center z-50 p-4"
       style={{ background: 'rgba(0,0,0,0.75)', backdropFilter: 'blur(8px)' }}
     >
       <div
-        className="rounded-2xl p-8 w-80 text-center"
+        className="rounded-2xl p-6 sm:p-8 w-full max-w-xs sm:w-80 text-center"
         style={{
           background: 'linear-gradient(160deg, rgba(30,23,46,0.98), rgba(22,17,32,0.99))',
           border: '1px solid rgba(34,25,50,1)',

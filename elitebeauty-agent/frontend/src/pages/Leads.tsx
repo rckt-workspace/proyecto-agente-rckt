@@ -39,7 +39,7 @@ export default function Leads() {
 
   return (
     <div className="space-y-5">
-      <div className="flex items-center justify-between">
+      <div className="flex items-center justify-between gap-3 flex-wrap">
         <h2 className="text-xl font-display font-bold text-eb-text tracking-wider uppercase">Leads</h2>
         <div className="flex items-center gap-2">
           <a href={exportLeadsUrl()} className="btn-secondary text-xs" download>
@@ -153,9 +153,9 @@ export default function Leads() {
 
       {/* Modal detalle */}
       {selected && (
-        <div className="fixed inset-0 flex items-center justify-center z-50" style={{ background: 'rgba(0,0,0,0.7)', backdropFilter: 'blur(6px)' }}>
+        <div className="fixed inset-0 flex items-center justify-center z-50 p-4" style={{ background: 'rgba(0,0,0,0.7)', backdropFilter: 'blur(6px)' }}>
           <div
-            className="rounded-2xl p-6 w-full max-w-lg shadow-2xl"
+            className="rounded-2xl p-6 w-full max-w-lg max-h-[85vh] overflow-y-auto shadow-2xl"
             style={{
               background: 'linear-gradient(160deg, rgba(30,23,46,0.98), rgba(22,17,32,0.99))',
               border: `1px solid ${BORDER}`,
@@ -171,7 +171,7 @@ export default function Leads() {
                 ✕
               </button>
             </div>
-            <div className="grid grid-cols-2 gap-3 text-sm mb-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-sm mb-4">
               {([
                 ['Teléfono', selected.phone], ['Email', selected.email],
                 ['Canal', selected.channel], ['Interés', selected.interest],

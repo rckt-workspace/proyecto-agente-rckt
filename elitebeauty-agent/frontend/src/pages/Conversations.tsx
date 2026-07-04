@@ -39,9 +39,9 @@ export default function Conversations() {
   };
 
   return (
-    <div className="flex gap-6 h-[calc(100vh-112px)]">
+    <div className="flex flex-col lg:flex-row gap-4 lg:gap-6 lg:h-[calc(100vh-112px)]">
       {/* Lista */}
-      <div className="w-80 flex flex-col gap-3">
+      <div className="w-full lg:w-80 flex flex-col gap-3 shrink-0">
         <div className="flex items-center gap-2">
           <h2 className="text-lg font-display font-bold text-eb-text flex-1 tracking-wider uppercase">
             Conversaciones
@@ -68,7 +68,7 @@ export default function Conversations() {
           </select>
         </div>
 
-        <div className="flex-1 overflow-y-auto space-y-2">
+        <div className="flex-1 overflow-y-auto space-y-2 max-h-[50vh] lg:max-h-none">
           {loading && <p className="text-sm text-eb-dim text-center pt-6">Cargando...</p>}
           {convs.map(c => (
             <button
@@ -103,7 +103,7 @@ export default function Conversations() {
       </div>
 
       {/* Detalle */}
-      <div className="flex-1 card overflow-hidden flex flex-col">
+      <div className="flex-1 min-h-[50vh] lg:min-h-0 card overflow-hidden flex flex-col">
         {!selected ? (
           <div className="flex-1 flex items-center justify-center text-eb-dim text-sm">
             Selecciona una conversación
@@ -111,11 +111,11 @@ export default function Conversations() {
         ) : (
           <>
             <div
-              className="flex items-center justify-between pb-3 mb-3"
+              className="flex items-center justify-between gap-3 flex-wrap pb-3 mb-3"
               style={{ borderBottom: `1px solid ${BORDER}` }}
             >
-              <div>
-                <h3 className="font-bold text-eb-text">
+              <div className="min-w-0">
+                <h3 className="font-bold text-eb-text truncate">
                   {selected.channel === 'voice' ? '📞' : '💬'} {selected.contact_name || selected.contact_id}
                 </h3>
                 <p className="text-xs text-eb-dim">{new Date(selected.created_at).toLocaleString('es-CO')}</p>

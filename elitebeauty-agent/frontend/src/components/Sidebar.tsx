@@ -10,21 +10,25 @@ const links = [
   { to: '/settings',      label: 'Configuración',  icon: '⚙️' },
 ];
 
-export default function Sidebar({ waStatus }: { waStatus: string }) {
+type Props = { waStatus: string; open: boolean; onNavigate: () => void };
+
+export default function Sidebar({ waStatus, open, onNavigate }: Props) {
   return (
     <aside
-      className="w-60 min-h-screen flex flex-col"
+      className={`w-64 sm:w-60 min-h-screen flex flex-col fixed inset-y-0 left-0 z-40 transform transition-transform duration-300 ease-in-out lg:static lg:translate-x-0 lg:z-auto ${
+        open ? 'translate-x-0' : '-translate-x-full'
+      }`}
       style={{
-        background: 'rgba(13, 10, 20, 0.75)',
+        background: 'rgba(13, 10, 20, 0.94)',
         borderRight: '1px solid rgba(34, 25, 50, 1)',
         backdropFilter: 'blur(20px)',
       }}
     >
       {/* Logo */}
-      <div className="px-5 py-5" style={{ borderBottom: '1px solid rgba(34, 25, 50, 1)' }}>
+      <div className="px-5 py-5 flex items-center justify-between" style={{ borderBottom: '1px solid rgba(34, 25, 50, 1)' }}>
         <div className="flex items-center gap-2.5">
           <div
-            className="w-9 h-9 rounded-xl flex items-center justify-center text-white font-bold text-sm"
+            className="w-9 h-9 rounded-xl flex items-center justify-center text-white font-bold text-sm shrink-0"
             style={{
               background: 'linear-gradient(135deg, #e11d48, #9333ea)',
               boxShadow: '0 0 18px rgba(225, 29, 72, 0.45)',
@@ -39,6 +43,13 @@ export default function Sidebar({ waStatus }: { waStatus: string }) {
             <p className="text-xs text-eb-dim">Panel IA</p>
           </div>
         </div>
+        <button
+          onClick={onNavigate}
+          className="lg:hidden text-eb-dim hover:text-eb-text text-xl leading-none px-1"
+          aria-label="Cerrar menú"
+        >
+          ✕
+        </button>
       </div>
 
       {/* WA Status */}
@@ -65,6 +76,7 @@ export default function Sidebar({ waStatus }: { waStatus: string }) {
             key={to}
             to={to}
             end={to === '/'}
+            onClick={onNavigate}
             className={({ isActive }) =>
               `flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium transition-all duration-200 ${
                 isActive

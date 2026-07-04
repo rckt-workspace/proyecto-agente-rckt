@@ -316,8 +316,8 @@ export default function Settings() {
         <h3 className="font-semibold text-eb-text mb-4">Configuración completa</h3>
         <div className="space-y-3">
           {config.map(c => (
-            <div key={c.key} className="flex items-start gap-3">
-              <div className="w-44 shrink-0">
+            <div key={c.key} className="flex flex-col sm:flex-row sm:items-start gap-2 sm:gap-3">
+              <div className="w-full sm:w-44 sm:shrink-0">
                 <p className="text-xs font-mono font-semibold text-eb-muted">{c.key}</p>
                 <p className="text-xs text-eb-dim">{c.description}</p>
               </div>
