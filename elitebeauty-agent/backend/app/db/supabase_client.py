@@ -113,6 +113,21 @@ async def get_history(conversation_id: str, limit: int = 6) -> list[dict]:
     return list(reversed(result.data or []))
 
 
+async def get_recent_messages_for_conversation(conversation_id: str, limit: int = 12) -> list[dict]:
+    """Últimos mensajes user/assistant de una conversación, orden cronológico ascendente."""
+    db = get_client()
+    result = (
+        db.table("messages")
+        .select("role,content,created_at")
+        .eq("conversation_id", conversation_id)
+        .in_("role", ["user", "assistant"])
+        .order("created_at", desc=True)
+        .limit(limit)
+        .execute()
+    )
+    return list(reversed(result.data or []))
+
+
 async def get_messages_by_conversation(conversation_id: str) -> list[dict]:
     db = get_client()
     result = (
@@ -169,6 +184,23 @@ async def create_lead(data: dict) -> dict:
     db = get_client()
     result = db.table("leads").insert(data).execute()
     return result.data[0]
+
+
+async def get_lead_by_id(lead_id: str) -> dict | None:
+    """Alias explícito de get_lead, usado por el flujo de voz saliente."""
+    return await get_lead(lead_id)
+
+
+async def get_lead_by_conversation(conversation_id: str) -> dict | None:
+    db = get_client()
+    result = (
+        db.table("leads")
+        .select("*")
+        .eq("conversation_id", conversation_id)
+        .limit(1)
+        .execute()
+    )
+    return result.data[0] if result.data else None
 
 
 # ─── Documents ────────────────────────────────────────────────────────────────
@@ -273,3 +305,36 @@ async def get_leads_raw(days: int = 30) -> list[dict]:
         .execute()
         .data or []
     )
+
+
+# ─── Voice calls (Twilio saliente) ────────────────────────────────────────────
+# Tabla creada por SQL aparte (supabase/migrations). No se crea desde código.
+
+async def create_voice_call(payload: dict) -> dict:
+    db = get_client()
+    result = db.table("voice_calls").insert(payload).execute()
+    return result.data[0]
+
+
+async def update_voice_call_by_id(voice_call_id: str, payload: dict) -> dict | None:
+    db = get_client()
+    result = db.table("voice_calls").update(payload).eq("id", voice_call_id).execute()
+    return result.data[0] if result.data else None
+
+
+async def update_voice_call_by_sid(call_sid: str, payload: dict) -> dict | None:
+    db = get_client()
+    result = db.table("voice_calls").update(payload).eq("call_sid", call_sid).execute()
+    return result.data[0] if result.data else None
+
+
+async def get_voice_call_by_id(voice_call_id: str) -> dict | None:
+    db = get_client()
+    result = db.table("voice_calls").select("*").eq("id", voice_call_id).limit(1).execute()
+    return result.data[0] if result.data else None
+
+
+async def get_voice_call_by_sid(call_sid: str) -> dict | None:
+    db = get_client()
+    result = db.table("voice_calls").select("*").eq("call_sid", call_sid).limit(1).execute()
+    return result.data[0] if result.data else None

@@ -97,6 +97,13 @@ class Settings(BaseSettings):
     twilio_phone_number: str = ""
     twilio_wa_sandbox_number: str = "+14155238886"
 
+    # Twilio Voice saliente (agente de llamadas)
+    voice_agent_enabled: bool = False
+    twilio_voice_language: str = "es-CO"
+    twilio_voice_name: str = "Polly.Mia"
+    # Validación de firma X-Twilio-Signature en webhooks (opcional, off por defecto en dev)
+    twilio_validate_signature: bool = False
+
     # URLs
     public_base_url: str = "http://localhost:8000"
     wa_bridge_url: str = "http://wa_bridge:3001"
@@ -150,6 +157,15 @@ class Settings(BaseSettings):
     @property
     def has_twilio(self) -> bool:
         return _has_real_value(self.twilio_account_sid) and _has_real_value(self.twilio_auth_token)
+
+    @property
+    def has_twilio_voice(self) -> bool:
+        """True si hay credenciales Twilio completas para originar llamadas salientes."""
+        return (
+            _has_real_value(self.twilio_account_sid)
+            and _has_real_value(self.twilio_auth_token)
+            and _has_real_value(self.twilio_phone_number)
+        )
 
 
 @lru_cache()

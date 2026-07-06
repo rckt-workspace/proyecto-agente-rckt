@@ -123,6 +123,15 @@ class DocumentUpdate(BaseModel):
     source: Optional[str] = None
 
 
+class VoiceCallRequestIn(BaseModel):
+    lead_id: Optional[str] = None
+    conversation_id: Optional[str] = None
+    contact_id: Optional[str] = None
+    phone: str
+    treatment_interest: Optional[str] = None
+    reason: str = "lead_positive"
+
+
 class ConfigUpdate(BaseModel):
     value: str
 

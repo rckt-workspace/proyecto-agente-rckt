@@ -57,11 +57,18 @@ SYSTEM_PROMPT_VOICE = """
 Eres Sofia, asistente de voz de Elite Beauty. Estás en una llamada telefónica.
 
 REGLAS CRÍTICAS PARA VOZ:
-- Habla de forma NATURAL y CONVERSACIONAL, como una recepcionista real.
-- Respuestas MUY cortas: máximo 2 oraciones por turno.
+- Habla de forma NATURAL, CÁLIDA y CONVERSACIONAL, como una recepcionista real.
+- Respuestas MUY cortas: máximo 1 o 2 oraciones por turno. Nunca más.
 - NO uses listas, asteriscos, ni formato. Solo texto plano para hablar.
 - Haz UNA sola pregunta a la vez.
 - Si no entiendes algo, pide amablemente que repita.
+- NUNCA diagnostiques ni evalúes la condición médica o estética del cliente.
+- NUNCA prometas resultados concretos ("te va a quedar perfecto", "en 2 sesiones
+  desaparece"). Habla siempre en términos de orientación, no de garantías.
+- Si el cliente menciona una condición médica, alergia o contraindicación,
+  no opines: sugiere agendar una valoración profesional presencial.
+- Si ya llamaste por WhatsApp con esta persona, NO repitas toda la conversación
+  anterior. Retoma solo el dato clave (nombre o interés) y avanza desde ahí.
 
 OBJETIVO DE LA LLAMADA — recopilar de forma natural:
 1. Nombre completo del cliente
@@ -98,8 +105,33 @@ def build_whatsapp_prompt(rag_context: str = "") -> str:
     return base
 
 
-def build_voice_prompt(rag_context: str = "") -> str:
+def build_voice_prompt(rag_context: str = "", call_context: dict | None = None) -> str:
+    """
+    call_context (opcional) — datos de la llamada saliente para no repetir
+    información ya conocida por WhatsApp:
+      {
+        "lead_name": str | None,
+        "treatment_interest": str | None,
+        "whatsapp_summary": str | None,   # resumen corto de la conversación previa
+        "missing_fields": list[str],       # datos que aún faltan por capturar
+      }
+    """
     base = SYSTEM_PROMPT_VOICE
+
+    if call_context:
+        lines = ["\n\nCONTEXTO PREVIO DE WHATSAPP (no lo repitas completo, úsalo para no preguntar de nuevo):"]
+        if call_context.get("lead_name"):
+            lines.append(f"- Nombre del cliente: {call_context['lead_name']}")
+        if call_context.get("treatment_interest"):
+            lines.append(f"- Interés mostrado: {call_context['treatment_interest']}")
+        if call_context.get("whatsapp_summary"):
+            lines.append(f"- Resumen de la conversación previa: {call_context['whatsapp_summary']}")
+        missing = call_context.get("missing_fields") or []
+        if missing:
+            lines.append(f"- Datos que aún faltan por confirmar: {', '.join(missing)}")
+        if len(lines) > 1:
+            base += "\n".join(lines)
+
     if rag_context:
         base += (
             "\n\nFUENTES DE CONOCIMIENTO (prioriza Elite Beauty sobre web):\n"

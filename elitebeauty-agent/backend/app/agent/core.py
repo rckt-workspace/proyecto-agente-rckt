@@ -53,6 +53,7 @@ async def run_agent(
     conversation_id: str,
     contact_id: str,
     model_override: str | None = None,
+    voice_context: dict | None = None,
 ) -> tuple[str, int, int, int]:
     """
     Procesa un mensaje a través del agente.
@@ -67,7 +68,7 @@ async def run_agent(
 
     # 2. System prompt según canal
     if channel == "voice":
-        system_prompt = build_voice_prompt(rag_context)
+        system_prompt = build_voice_prompt(rag_context, voice_context)
     else:
         system_prompt = build_whatsapp_prompt(rag_context)
 
