@@ -49,14 +49,16 @@ def _twiml_gather(say_text: str, action: str) -> str:
 
 
 # ─── TwiML del flujo saliente (usa idioma/voz configurables por settings) ─────
-def _twiml_outbound_gather(say_text: str, action: str) -> str:
+# timeout=30: Twilio espera hasta 30s de silencio antes de considerar que no hubo
+# respuesta — evita colgar solo porque el cliente se demoró en contestar.
+def _twiml_outbound_gather(say_text: str, action: str, timeout: int = 30) -> str:
     resp = VoiceResponse()
     gather = Gather(
         input="speech",
         language=settings.twilio_voice_language,
         action=action,
         speech_timeout="auto",
-        timeout=6,
+        timeout=timeout,
     )
     gather.say(say_text, voice=settings.twilio_voice_name, language=settings.twilio_voice_language)
     resp.append(gather)
@@ -188,31 +190,40 @@ async def voice_process(request: Request):
         )
         return Response(content=xml, media_type="application/xml")
 
-    conversation_id = _active_calls.get(call_sid)
-    if not conversation_id:
-        conv = await db.get_or_create_conversation("voice", from_number or call_sid)
-        conversation_id = str(conv["id"])
-        _active_calls[call_sid] = conversation_id
-
-    reply, tokens, latency, rag_chunks = await run_agent(
-        message=speech_result,
-        channel="voice",
-        conversation_id=conversation_id,
-        contact_id=from_number or call_sid,
-    )
-
-    await broadcast({
-        "type": "call_event",
-        "data": {
-            "event": "turn",
-            "call_sid": call_sid,
-            "user_said": speech_result,
-            "agent_said": reply,
-            "latency_ms": latency,
-        },
-    })
-
     base_url = request.base_url
+
+    try:
+        conversation_id = _active_calls.get(call_sid)
+        if not conversation_id:
+            conv = await db.get_or_create_conversation("voice", from_number or call_sid)
+            conversation_id = str(conv["id"])
+            _active_calls[call_sid] = conversation_id
+
+        reply, tokens, latency, rag_chunks = await run_agent(
+            message=speech_result,
+            channel="voice",
+            conversation_id=conversation_id,
+            contact_id=from_number or call_sid,
+        )
+
+        await broadcast({
+            "type": "call_event",
+            "data": {
+                "event": "turn",
+                "call_sid": call_sid,
+                "user_said": speech_result,
+                "agent_said": reply,
+                "latency_ms": latency,
+            },
+        })
+    except Exception as e:
+        logger.error(f"[Voice] Turno falló en /process (call_sid={call_sid}): {e}")
+        xml = _twiml_gather(
+            "Tuve un problema técnico, pero sigo aquí. ¿Puedes repetir lo último?",
+            f"{base_url}voice/process",
+        )
+        return Response(content=xml, media_type="application/xml")
+
     xml = _twiml_gather(reply, f"{base_url}voice/process")
     return Response(content=xml, media_type="application/xml")
 
@@ -386,9 +397,13 @@ async def voice_gather_outbound(request: Request, voice_call_id: str = Query(...
     call_sid = str(form.get("CallSid", ""))
     speech_result = str(form.get("SpeechResult", "")).strip()
 
-    voice_call = await db.get_voice_call_by_id(voice_call_id)
-    if not voice_call and call_sid:
-        voice_call = await db.get_voice_call_by_sid(call_sid)
+    try:
+        voice_call = await db.get_voice_call_by_id(voice_call_id)
+        if not voice_call and call_sid:
+            voice_call = await db.get_voice_call_by_sid(call_sid)
+    except Exception as e:
+        logger.error(f"[Voice] No se pudo consultar voice_call en /gather (id={voice_call_id}): {e}")
+        voice_call = None
 
     if not voice_call:
         logger.warning(f"[Voice] /voice/gather: voice_call no encontrado (id={voice_call_id}, sid={call_sid})")
@@ -403,8 +418,10 @@ async def voice_gather_outbound(request: Request, voice_call_id: str = Query(...
             _no_speech_retry.discard(vc_id)
             xml = _twiml_say_hangup("No logré escucharte. Te contactaremos por WhatsApp. ¡Hasta pronto!")
             return Response(content=xml, media_type="application/xml")
+        # Primer silencio: no se cuelga todavía — se pregunta y se da una
+        # segunda ventana (10s) antes de terminar la llamada.
         _no_speech_retry.add(vc_id)
-        xml = _twiml_outbound_gather("Perdona, no te escuché bien. ¿Puedes repetir?", action)
+        xml = _twiml_outbound_gather("¿Sigues en la línea? Tómate tu tiempo.", action, timeout=10)
         return Response(content=xml, media_type="application/xml")
 
     _no_speech_retry.discard(vc_id)
@@ -428,51 +445,63 @@ async def voice_gather_outbound(request: Request, voice_call_id: str = Query(...
         xml = _twiml_say_hangup(farewell)
         return Response(content=xml, media_type="application/xml")
 
-    lead = await db.get_lead_by_id(voice_call["lead_id"]) if voice_call.get("lead_id") else None
-
-    conversation_id = voice_call.get("conversation_id")
-    if not conversation_id:
-        conv = await db.get_or_create_conversation("voice", voice_call.get("phone") or call_sid)
-        conversation_id = str(conv["id"])
-        try:
-            await db.update_voice_call_by_id(vc_id, {"conversation_id": conversation_id})
-        except Exception as e:
-            logger.warning(f"[Voice] No se pudo asociar conversation_id a voice_call {vc_id}: {e}")
-
-    voice_context = {
-        "lead_name": (lead or {}).get("name"),
-        "treatment_interest": voice_call.get("treatment_interest") or (lead or {}).get("interest"),
-        "whatsapp_summary": (lead or {}).get("summary"),
-    }
-
-    reply, tokens, latency, rag_chunks = await run_agent(
-        message=speech_result,
-        channel="voice",
-        conversation_id=conversation_id,
-        contact_id=voice_call.get("phone") or call_sid,
-        voice_context=voice_context,
-    )
-
+    # ─── Todo este bloque puede fallar por un hipo de red/DB/LLM — nunca debe
+    # dejar pasar una excepción cruda a Twilio (eso hace que Twilio muestre su
+    # propio error en inglés y cuelgue). Cualquier falla cae a un reintento
+    # hablado en español, sin cortar la llamada.
     try:
-        await db.update_voice_call_by_id(vc_id, {
-            "last_user_utterance": speech_result,
-            "last_agent_response": reply,
+        lead = await db.get_lead_by_id(voice_call["lead_id"]) if voice_call.get("lead_id") else None
+
+        conversation_id = voice_call.get("conversation_id")
+        if not conversation_id:
+            conv = await db.get_or_create_conversation("voice", voice_call.get("phone") or call_sid)
+            conversation_id = str(conv["id"])
+            try:
+                await db.update_voice_call_by_id(vc_id, {"conversation_id": conversation_id})
+            except Exception as e:
+                logger.warning(f"[Voice] No se pudo asociar conversation_id a voice_call {vc_id}: {e}")
+
+        voice_context = {
+            "lead_name": (lead or {}).get("name"),
+            "treatment_interest": voice_call.get("treatment_interest") or (lead or {}).get("interest"),
+            "whatsapp_summary": (lead or {}).get("summary"),
+        }
+
+        reply, tokens, latency, rag_chunks = await run_agent(
+            message=speech_result,
+            channel="voice",
+            conversation_id=conversation_id,
+            contact_id=voice_call.get("phone") or call_sid,
+            voice_context=voice_context,
+        )
+
+        try:
+            await db.update_voice_call_by_id(vc_id, {
+                "last_user_utterance": speech_result,
+                "last_agent_response": reply,
+            })
+        except Exception as e:
+            logger.warning(f"[Voice] No se pudo actualizar voice_call {vc_id}: {e}")
+
+        await broadcast({
+            "type": "call_event",
+            "data": {
+                "event": "turn",
+                "voice_call_id": vc_id,
+                "call_sid": call_sid,
+                "user_said": speech_result,
+                "agent_said": reply,
+                "turn_count": turn_count,
+                "latency_ms": latency,
+            },
         })
     except Exception as e:
-        logger.warning(f"[Voice] No se pudo actualizar voice_call {vc_id}: {e}")
-
-    await broadcast({
-        "type": "call_event",
-        "data": {
-            "event": "turn",
-            "voice_call_id": vc_id,
-            "call_sid": call_sid,
-            "user_said": speech_result,
-            "agent_said": reply,
-            "turn_count": turn_count,
-            "latency_ms": latency,
-        },
-    })
+        logger.error(f"[Voice] Turno falló en /gather (voice_call_id={vc_id}): {e}")
+        xml = _twiml_outbound_gather(
+            "Tuve un problema técnico, pero sigo aquí. ¿Puedes repetir lo último?",
+            action,
+        )
+        return Response(content=xml, media_type="application/xml")
 
     xml = _twiml_outbound_gather(reply, action)
     return Response(content=xml, media_type="application/xml")

@@ -72,18 +72,24 @@ async def _safe_search_web(query: str) -> str:
         return ""
 
 
-async def get_context(query: str, top_k: int | None = None) -> tuple[str, int]:
+async def get_context(query: str, top_k: int | None = None, include_web: bool = True) -> tuple[str, int]:
     """
     RAG mixto: lanza búsqueda interna (pgvector) y web (Tavily) en paralelo.
     Combina los resultados etiquetando la fuente de cada sección.
+    include_web=False omite Tavily por completo (usado en voz, donde cada
+    segundo cuenta antes de que Twilio abandone la espera del webhook).
     Returns: (context_str, num_internal_chunks)
     """
     k = top_k or settings.rag_top_k
 
-    (internal_ctx, num_chunks), web_ctx = await asyncio.gather(
-        _safe_search_internal(query, k),
-        _safe_search_web(query),
-    )
+    if include_web:
+        (internal_ctx, num_chunks), web_ctx = await asyncio.gather(
+            _safe_search_internal(query, k),
+            _safe_search_web(query),
+        )
+    else:
+        internal_ctx, num_chunks = await _safe_search_internal(query, k)
+        web_ctx = ""
 
     sections = []
     if internal_ctx:

@@ -54,6 +54,10 @@ class Settings(BaseSettings):
     chat_fallback_timeout_ms: int = 45000
     chat_enhancement_timeout_ms: int = 30000
     chat_judge_timeout_ms: int = 20000
+    # Timeout corto específico para el canal de voz: Twilio deja de esperar la
+    # respuesta del webhook mucho antes que un timeout de chat normal, así que
+    # el LLM debe responder rápido o caer al fallback local (nunca colgar la llamada).
+    voice_chat_timeout_ms: int = 10000
 
     # ── OpenRouter ──────────────────────────────────────────────────────────────
     openrouter_api_key: str = ""

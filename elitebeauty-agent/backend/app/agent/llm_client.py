@@ -364,8 +364,14 @@ async def generate_chat_response(
         except ValueError:
             max_tokens = settings.chat_max_tokens
 
-    timeout_ms = settings.chat_timeout_ms
-    fallback_timeout_ms = settings.chat_fallback_timeout_ms
+    if channel == "voice":
+        # Twilio abandona la espera del webhook mucho antes que nuestros timeouts
+        # normales de chat — hay que responder rápido o caer al fallback local.
+        timeout_ms = settings.voice_chat_timeout_ms
+        fallback_timeout_ms = settings.voice_chat_timeout_ms
+    else:
+        timeout_ms = settings.chat_timeout_ms
+        fallback_timeout_ms = settings.chat_fallback_timeout_ms
 
     # ── Build call chain ───────────────────────────────────────────────────────
     chain = _build_chain(provider, fallback_provider, use_fallback, cfg, model_override)

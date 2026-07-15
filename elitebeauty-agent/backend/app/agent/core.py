@@ -63,8 +63,8 @@ async def run_agent(
     max_hist = int(await db.get_config_value("max_history") or settings.max_history)
     top_k = int(await db.get_config_value("rag_top_k") or settings.rag_top_k)
 
-    # 1. Contexto RAG
-    rag_context, rag_chunks = await rag.get_context(message, top_k=top_k)
+    # 1. Contexto RAG (en voz se omite la búsqueda web: Twilio no espera tanto)
+    rag_context, rag_chunks = await rag.get_context(message, top_k=top_k, include_web=(channel != "voice"))
 
     # 2. System prompt según canal
     if channel == "voice":
