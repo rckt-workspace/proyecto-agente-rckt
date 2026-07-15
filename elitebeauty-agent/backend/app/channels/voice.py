@@ -1,3 +1,4 @@
+import asyncio
 import logging
 from datetime import datetime, timezone
 from fastapi import APIRouter, HTTPException, Query, Request
@@ -122,7 +123,11 @@ async def create_voice_call_request(
     voice_call_id = str(voice_call["id"])
 
     try:
-        call_sid = twilio_voice_service.create_outbound_call(to=to_number, voice_call_id=voice_call_id)
+        # El SDK de Twilio es síncrono — se corre en thread aparte para no
+        # congelar el event loop mientras espera la respuesta de su API.
+        call_sid = await asyncio.to_thread(
+            twilio_voice_service.create_outbound_call, to=to_number, voice_call_id=voice_call_id
+        )
     except Exception as e:
         logger.error(f"[Voice] Fallo creando llamada saliente para {voice_call_id}: {e}")
         await db.update_voice_call_by_id(voice_call_id, {"status": "failed"})

@@ -151,8 +151,10 @@ async def embed_document(doc_id: str, content: str) -> int:
     """
     db = get_client()
 
-    # Borrar embeddings previos del documento
-    db.table("embeddings").delete().eq("document_id", doc_id).execute()
+    # Borrar embeddings previos del documento (bloqueante — corre en thread aparte)
+    await asyncio.to_thread(
+        lambda: db.table("embeddings").delete().eq("document_id", doc_id).execute()
+    )
 
     chunks = chunk_text(content)
     if not chunks:
@@ -174,10 +176,16 @@ async def embed_document(doc_id: str, content: str) -> int:
 
     # Insertar en lotes para evitar límites de tamaño de request
     batch_size = 50
-    for start in range(0, len(rows), batch_size):
-        db.table("embeddings").insert(rows[start : start + batch_size]).execute()
 
-    db.table("documents").update({"embedded": True}).eq("id", doc_id).execute()
+    def _insert_batches():
+        for start in range(0, len(rows), batch_size):
+            db.table("embeddings").insert(rows[start : start + batch_size]).execute()
+
+    await asyncio.to_thread(_insert_batches)
+
+    await asyncio.to_thread(
+        lambda: db.table("documents").update({"embedded": True}).eq("id", doc_id).execute()
+    )
     logger.info(
         f"Documento {doc_id} indexado: {len(rows)} chunks | "
         f"proveedor={_provider()} | modelo={_model_name()}"
@@ -193,8 +201,10 @@ async def search_similar(query: str, top_k: int = 5) -> list[dict]:
     """
     db = get_client()
     query_vec: list[float] = await asyncio.to_thread(embed_text, query)
-    result = db.rpc(
-        "match_embeddings",
-        {"query_embedding": query_vec, "match_count": top_k},
-    ).execute()
+    result = await asyncio.to_thread(
+        lambda: db.rpc(
+            "match_embeddings",
+            {"query_embedding": query_vec, "match_count": top_k},
+        ).execute()
+    )
     return result.data or []

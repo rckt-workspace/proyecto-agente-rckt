@@ -1,3 +1,4 @@
+import asyncio
 import logging
 import re
 from app.agent import llm_client, rag
@@ -59,12 +60,22 @@ async def run_agent(
     Procesa un mensaje a través del agente.
     Returns: (reply, tokens_used, latency_ms, rag_chunks)
     """
-    # Configuración desde DB
-    max_hist = int(await db.get_config_value("max_history") or settings.max_history)
-    top_k = int(await db.get_config_value("rag_top_k") or settings.rag_top_k)
-
-    # 1. Contexto RAG (en voz se omite la búsqueda web: Twilio no espera tanto)
-    rag_context, rag_chunks = await rag.get_context(message, top_k=top_k, include_web=(channel != "voice"))
+    # Configuración desde DB (en paralelo, no hay dependencia entre ambas)
+    if channel == "voice":
+        # En voz se omite el RAG por completo: el cálculo de embeddings locales
+        # (sentence-transformers/torch) es justo el tipo de operación pesada que
+        # hace que el turno tarde más de lo que Twilio espera por el webhook.
+        # El prompt de voz ya trae un resumen del negocio embebido.
+        max_hist = int(await db.get_config_value("max_history") or settings.max_history)
+        rag_context, rag_chunks = "", 0
+    else:
+        max_hist_raw, top_k_raw = await asyncio.gather(
+            db.get_config_value("max_history"),
+            db.get_config_value("rag_top_k"),
+        )
+        max_hist = int(max_hist_raw or settings.max_history)
+        top_k = int(top_k_raw or settings.rag_top_k)
+        rag_context, rag_chunks = await rag.get_context(message, top_k=top_k)
 
     # 2. System prompt según canal
     if channel == "voice":
@@ -88,9 +99,11 @@ async def run_agent(
         model_override=model_override,
     )
 
-    # 6. Guardar mensajes en DB
-    await db.save_message(conversation_id, "user", message)
-    await db.save_message(conversation_id, "assistant", reply, tokens_used=tokens, latency_ms=latency)
+    # 6. Guardar mensajes en DB (en paralelo, son inserts independientes)
+    await asyncio.gather(
+        db.save_message(conversation_id, "user", message),
+        db.save_message(conversation_id, "assistant", reply, tokens_used=tokens, latency_ms=latency),
+    )
 
     # 7. Intentar extraer datos del lead
     lead_data = _extract_lead_data(message)
